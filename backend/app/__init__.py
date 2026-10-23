@@ -1,0 +1,1 @@
+"""Hissiyat backend application."""

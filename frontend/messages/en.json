@@ -1,0 +1,28 @@
+{
+  "Metadata": {
+    "title": "Hissiyat | Human experience and social patterns",
+    "description": "A research platform supporting the exploration of human experience and social patterns in online data."
+  },
+  "Navigation": {
+    "projectName": "Hissiyat",
+    "home": "Home",
+    "languageLabel": "Interface language",
+    "turkish": "Türkçe",
+    "english": "English",
+    "skipToContent": "Skip to main content"
+  },
+  "Home": {
+    "eyebrow": "Research centered on human experience",
+    "title": "Hissiyat",
+    "description": "An AI-supported research platform that aims to explore how topics, emotions, needs, and experiences relate to one another and change over time in online data.",
+    "status": "Under development",
+    "statusDescription": "The application foundation is being prepared. Data collection and analysis features are not available yet.",
+    "principle": "Research approach",
+    "principleDescription": "The aim is to support the study of patterns while preserving context and data limitations, rather than make definitive judgments about human experience."
+  },
+  "NotFound": {
+    "title": "Page not found",
+    "description": "The page you are looking for does not exist.",
+    "home": "Return home"
+  }
+}

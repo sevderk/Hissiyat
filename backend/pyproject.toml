@@ -1,0 +1,5 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra -m 'not integration'"
+markers = ["integration: requires the isolated local hissiyat_test PostgreSQL database"]

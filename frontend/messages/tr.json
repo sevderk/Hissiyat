@@ -1,0 +1,28 @@
+{
+  "Metadata": {
+    "title": "Hissiyat | İnsan deneyimi ve toplumsal örüntüler",
+    "description": "Çevrim içi verilerde insan deneyimi ve toplumsal örüntülerin keşfini destekleyen araştırma platformu."
+  },
+  "Navigation": {
+    "projectName": "Hissiyat",
+    "home": "Ana sayfa",
+    "languageLabel": "Arayüz dili",
+    "turkish": "Türkçe",
+    "english": "English",
+    "skipToContent": "Ana içeriğe geç"
+  },
+  "Home": {
+    "eyebrow": "İnsan deneyimine odaklanan araştırma",
+    "title": "Hissiyat",
+    "description": "Çevrim içi verilerde konuların, duyguların, ihtiyaçların ve deneyimlerin birbiriyle ilişkisini ve zaman içindeki değişimini keşfetmeyi amaçlayan yapay zekâ destekli bir araştırma platformu.",
+    "status": "Geliştirme aşamasında",
+    "statusDescription": "Şu anda uygulamanın temel altyapısı hazırlanıyor. Veri toplama ve analiz özellikleri henüz kullanıma açık değil.",
+    "principle": "Araştırma yaklaşımı",
+    "principleDescription": "Amaç, insan deneyimi hakkında kesin hükümler vermek değil; bağlamı ve veri sınırlılıklarını koruyarak örüntülerin incelenmesini desteklemek."
+  },
+  "NotFound": {
+    "title": "Sayfa bulunamadı",
+    "description": "Aradığınız sayfa mevcut değil.",
+    "home": "Ana sayfaya dön"
+  }
+}

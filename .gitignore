@@ -1,0 +1,47 @@
+# Local configuration and secrets
+# Keep original academic reference documents local.
+/*.pdf
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# Node.js and Next.js
+node_modules/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+
+# Generated data, models and local artifacts
+data/
+datasets/
+models/
+artifacts/
+logs/
+tmp/
+temp/
+dist/
+build/
+*.log
+*.tmp
+*.bak
+
+# Editor and operating system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini

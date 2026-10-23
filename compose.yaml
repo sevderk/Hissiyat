@@ -1,0 +1,24 @@
+name: hissiyat-dev
+
+services:
+  postgres:
+    image: postgres:18.6-bookworm
+    environment:
+      POSTGRES_DB: ${HISSIYAT_POSTGRES_DB:?Set HISSIYAT_POSTGRES_DB in the root .env file}
+      POSTGRES_USER: ${HISSIYAT_POSTGRES_USER:?Set HISSIYAT_POSTGRES_USER in the root .env file}
+      POSTGRES_PASSWORD: ${HISSIYAT_POSTGRES_PASSWORD:?Set a generated development password in the root .env file}
+    ports:
+      - "127.0.0.1:${HISSIYAT_POSTGRES_PORT:-55432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ./infrastructure/postgres/01-create-test-database.sql:/docker-entrypoint-initdb.d/01-create-test-database.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    restart: "no"
+
+volumes:
+  postgres_data:
