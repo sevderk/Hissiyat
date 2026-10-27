@@ -2,8 +2,8 @@
 
 An AI-supported research platform for exploring human experience and social
 patterns in online data. This repository contains the application foundation and
-Phase 1B local PostgreSQL connectivity. It does not collect data or produce
-analytical results.
+Phase 1B local PostgreSQL connectivity and Phase 1D source-independent input
+validation. It does not collect data or produce analytical results.
 
 ## Requirements
 
@@ -170,10 +170,17 @@ docs/       Architecture, environment and validation notes
 ```
 
 There are no application tables, migrations, authentication, data collection,
-background processing, NLP models, dashboards, or deployment. No research domain or external
-data source has been chosen. UI localization does not imply multilingual NLP
-capability. The source proposal is preserved locally and root PDF files are
-excluded from Git to avoid publishing personal information.
+background processing, NLP models, dashboards, or deployment. The approved first
+pilot concerns education, career expectations and future uncertainty, using
+English text; Turkish text is a parallel feasibility investigation. The platform
+and input models remain domain-independent. Stack Exchange text, official Google
+Trends CSV exports and Turkish Bluesky text are candidates only; none has final
+collection or analysis approval. UI localization does not imply NLP support.
 
-See `docs/architecture.md` for conventions and scope. Changes beyond Phase 1B
-require explicit approval. No Git commits were created during initialization.
+See [input contracts](docs/data-contracts.md) for implemented validation,
+provenance metadata, safe error reporting and limitations. Synthetic fixtures are
+test inputs, not research observations. The source proposal remains local,
+unchanged and excluded from Git. A reviewed Phase 1B foundation baseline was
+committed locally before implementing Phase 1D; Phase 1D changes remain
+uncommitted for review. See [Phase 1D validation](docs/validation-phase-1d.md).
+Work beyond Phase 1D requires explicit approval.

@@ -1,0 +1,68 @@
+{
+  "notice": "Entirely synthetic test inputs; no actual research observations or source permissions.",
+  "collection": {
+    "collection_id": "synthetic-import-001",
+    "source_policy": {
+      "source_id": "synthetic-text-source",
+      "policy_reference": "urn:synthetic:policy:unverified",
+      "usage_status": "unverified"
+    },
+    "method": "file_import",
+    "occurred_at": "2026-01-03T12:00:00Z",
+    "source_reference": "urn:synthetic:export:001"
+  },
+  "text_records": [
+    {
+      "source_record_id": "synthetic-en-001",
+      "text": "Synthetic sentence: the imaginary blue notebook is open.",
+      "published_at": "2026-01-01T08:00:00Z",
+      "retrieved_at": "2026-01-02T12:00:00Z",
+      "language_code": "en",
+      "language_method": "source",
+      "original_reference": "https://example.invalid/synthetic/en-001"
+    },
+    {
+      "source_record_id": "synthetic-tr-001",
+      "text": "Sentetik cümle: Çınar, ışık, öğüt, şişe ve üzüm yalnızca uydurma örneklerdir.",
+      "published_at": "2026-01-01T11:00:00+03:00",
+      "retrieved_at": "2026-01-02T15:00:00+03:00",
+      "language_code": "tr",
+      "language_method": "human"
+    }
+  ],
+  "trend_series": {
+    "series_id": "synthetic-trend-001",
+    "descriptor": "imaginary blue notebook",
+    "descriptor_kind": "search_term",
+    "geographic_scope": "synthetic-region",
+    "measurement_unit": "normalized_search_interest",
+    "scaling_context": "Synthetic source-declared relative index within this export; not absolute search counts.",
+    "scale_min": 0,
+    "scale_max": 100
+  },
+  "trend_observations": [
+    {
+      "interval_start": "2026-01-01T00:00:00Z",
+      "interval_end": "2026-01-02T00:00:00Z",
+      "retrieved_at": "2026-01-02T12:00:00Z",
+      "value_status": "observed",
+      "value": 42,
+      "data_reference": "urn:synthetic:trend-export:row:1"
+    },
+    {
+      "interval_start": "2026-01-02T00:00:00Z",
+      "interval_end": "2026-01-03T00:00:00Z",
+      "retrieved_at": "2026-01-03T12:00:00Z",
+      "value_status": "missing",
+      "value": null,
+      "data_reference": "urn:synthetic:trend-export:row:2"
+    },
+    {
+      "interval_start": "2026-01-02T00:00:00Z",
+      "interval_end": "2026-01-03T00:00:00Z",
+      "retrieved_at": "2026-01-03T12:00:00Z",
+      "value_status": "suppressed",
+      "data_reference": "urn:synthetic:trend-export:row:3"
+    }
+  ]
+}
