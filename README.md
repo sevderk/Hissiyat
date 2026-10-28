@@ -2,8 +2,9 @@
 
 An AI-supported research platform for exploring human experience and social
 patterns in online data. This repository contains the application foundation and
-Phase 1B local PostgreSQL connectivity and Phase 1D source-independent input
-validation. It does not collect data or produce analytical results.
+local PostgreSQL connectivity, source-independent input validation and a Phase 2A
+minimal research schema with explicit Alembic migrations. It does not collect data
+or produce analytical results.
 
 ## Requirements
 
@@ -39,6 +40,20 @@ docker compose --project-name hissiyat-dev --file compose.yaml stop postgres
 See [local PostgreSQL development](docs/database-development.md) for prerequisites,
 port changes, database health checks and troubleshooting. Do not reuse an
 unrelated PostgreSQL instance or delete its data.
+
+Starting PostgreSQL or the API does not apply migrations. After installing the
+backend lock, inspect the migration state from `backend/`:
+
+```powershell
+.\.venv\Scripts\python.exe -B -m alembic heads
+.\.venv\Scripts\python.exe -B -m alembic -x target=test current
+.\.venv\Scripts\python.exe -B -m alembic -x target=development current
+```
+
+See [research schema and migrations](docs/research-schema.md) before applying
+anything. Agents need explicit owner approval before persistent development
+database changes. The new schema tests migrate only `hissiyat_test` inside a
+transaction and roll back their DDL and synthetic rows afterward.
 
 ## Frontend setup and launch
 
@@ -162,15 +177,16 @@ lock and rerun validation.
 
 ```text
 frontend/   Next.js App Router, TypeScript, Tailwind CSS, next-intl
-backend/    FastAPI, database connection pool, liveness/readiness, pytest
+backend/    FastAPI, input contracts, SQLAlchemy Core schema, Alembic, pytest
 infrastructure/  PostgreSQL test-database initialization
 scripts/    Local-only environment setup
 compose.yaml  Isolated local PostgreSQL service
 docs/       Architecture, environment and validation notes
 ```
 
-There are no application tables, migrations, authentication, data collection,
-background processing, NLP models, dashboards, or deployment. The approved first
+Phase 2A defines five research tables and an explicit initial migration. Physical
+trend persistence, authentication, data collection, background processing, NLP,
+dashboards and deployment remain deferred. The approved first
 pilot concerns education, career expectations and future uncertainty, using
 English text; Turkish text is a parallel feasibility investigation. The platform
 and input models remain domain-independent. Stack Exchange text, official Google
@@ -180,7 +196,8 @@ collection or analysis approval. UI localization does not imply NLP support.
 See [input contracts](docs/data-contracts.md) for implemented validation,
 provenance metadata, safe error reporting and limitations. Synthetic fixtures are
 test inputs, not research observations. The source proposal remains local,
-unchanged and excluded from Git. A reviewed Phase 1B foundation baseline was
-committed locally before implementing Phase 1D; Phase 1D changes remain
-uncommitted for review. See [Phase 1D validation](docs/validation-phase-1d.md).
-Work beyond Phase 1D requires explicit approval.
+unchanged and excluded from Git. Phase 1B and Phase 1D have local Git checkpoints;
+Phase 2A changes remain uncommitted for review. See the historical
+[Phase 1D validation](docs/validation-phase-1d.md) and current
+[Phase 2A validation](docs/validation-phase-2a.md). Work beyond Phase 2A requires
+explicit approval.

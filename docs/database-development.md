@@ -72,7 +72,8 @@ docker compose --project-name hissiyat-dev --file compose.yaml exec -T postgres 
 
 The health check tests server acceptance. Backend readiness additionally checks
 an authenticated connection with `SELECT 1`. Neither test proves the presence
-of application tables, and none are created in this phase.
+or migration state of research tables. Phase 2A schema creation is an explicit
+Alembic operation; see `research-schema.md` before applying it.
 
 On the first boot of an empty volume, the official entrypoint creates the chosen
 development database and runs `01-create-test-database.sql` to create the separate
@@ -133,7 +134,9 @@ Integration tests require `backend/.env.test`, loopback host, test environment a
 the exact `hissiyat_test` database name. Missing or unsafe settings fail the tests
 rather than silently skipping them. Shell environment variables override dotenv;
 remove conflicting `HISSIYAT_DATABASE_*` values before running tests. The suite
-uses only read-only queries. Failure testing reserves a non-listening local port;
+uses read-only queries for the original connectivity tests. Phase 2A schema tests
+also apply migrations and synthetic rows inside `hissiyat_test` transactions,
+then roll everything back; they never reset development. Failure testing reserves a non-listening local port;
 it does not stop an existing database. No user or research data is used.
 
 ## Stop without deleting data
@@ -163,8 +166,10 @@ or broad prune commands. No automatic restart policy is enabled.
 - **Docker permission failure only in Codex:** request tool approval for Docker
   named-pipe access; do not weaken host security settings.
 
-This is local development infrastructure, not a production deployment. The files
-contain no application schema, migrations, ingestion, background jobs or NLP.
+This is local development infrastructure, not a production deployment. Compose
+initialization creates only the empty test database. Research tables are managed
+separately by the explicit Phase 2A Alembic migration, never by API startup.
+There is no ingestion, background processing or NLP.
 Docker administrators can inspect container environment variables; ignored local
 files are not a production secrets manager. No unrelated dependency upgrades or
 npm audit fixes are part of this phase.

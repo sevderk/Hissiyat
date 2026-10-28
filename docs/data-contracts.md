@@ -3,8 +3,9 @@
 Phase 1D implements five Pydantic validation models in
 `backend/app/contracts/inputs.py`. They describe candidate inputs for future
 controlled JSON/CSV/API adapters. They do not ingest, persist, normalize, analyze
-or authorize data. Existing health endpoints are unchanged; no new endpoint,
-PostgreSQL table, migration or dependency is added.
+or authorize data. Phase 2A adds separate Core metadata and migrations, described
+in `research-schema.md`; the contracts themselves still have no persistence or
+API integration. Existing text and trend validation behavior remains intact.
 
 ## Implemented metadata
 
@@ -110,16 +111,21 @@ installed by this phase.
 
 ## Deferred conceptual design
 
-The Phase 1C concepts `SourceRecord`, `TextVersion`, `LanguageAssessment`,
-`QualityAssessment`, `CorpusVersion`, `TrendSeries`, `TrendObservation`,
+Phase 2A implements physical source/policy/event identity, source records and
+text versions only. Nested input snapshots must eventually be resolved to those
+identities by an approved adapter; no such adapter exists yet. Input language and
+quality labels are not persisted as independent research assessments.
+
+The Phase 1C concepts `LanguageAssessment`, `QualityAssessment`, `CorpusVersion`,
+`TrendSeries`, `TrendObservation`,
 `AnalysisRun`, `ModelVersion`, `HumanAnnotation` and `EvaluationRun` remain
 conceptual persistence/research entities. These input models are not their
-database implementation, and policy/collection metadata is not a full policy
-registry or collection-event store.
+database implementation. Policy rows store supplied references and review
+metadata; they are not a trusted authorization or retention enforcement system.
 
 Batch duplicate detection, cross-record consistency, source-specific format and
-rights verification, source adapters, database provenance, corpus versioning,
+rights verification, source adapters, full historical provenance, corpus versioning,
 normalization, NLP, evaluator identities and inter-evaluator agreement are not
 implemented. Fixtures in `backend/tests/fixtures/synthetic_contracts.json` are
 explicitly synthetic and never evidence about a real source or population.
-Database models and ingestion require a separate approved phase.
+Ingestion and any expansion of the physical model require a separate approved phase.

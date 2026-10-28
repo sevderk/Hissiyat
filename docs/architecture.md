@@ -1,13 +1,13 @@
 # Architecture and conventions
 
-## Current scope through Phase 1D
+## Current scope through Phase 2A
 
 Hissiyat uses a modular monorepo with independently managed frontend and backend
 dependencies. No monorepo orchestration tool or shared package is needed yet.
 
 - Frontend: Next.js App Router, TypeScript, Tailwind CSS and next-intl.
 - Backend: Python and FastAPI with a small versioned API package.
-- Database: isolated local PostgreSQL 18.6 through Compose; SQLAlchemy Core and psycopg connectivity only.
+- Database: isolated local PostgreSQL 18.6 through Compose; SQLAlchemy Core, psycopg and explicit Alembic migrations.
 - Future analysis: Python; models will be selected through experiments.
 - Development: local Windows environment, 16 GB RAM; GPU availability unconfirmed.
 
@@ -23,14 +23,22 @@ API version; `app/main.py` creates the application and attaches the router.
 `app/core/database.py` owns a small lazy connection pool. FastAPI lifespan creates
 the pool without connecting and disposes it at shutdown. Sync readiness runs in
 FastAPI's threadpool with bounded connection, statement and pool wait times.
-There is no ORM session or model layer because this phase only needs SQLAlchemy
-Core connections. Tests create isolated application instances. Add services, repositories or other
+There is no ORM session or ORM model layer; schema definitions and tests use
+Core tables and explicit connections. Tests create isolated application instances. Add services, repositories or other
 layers only when a concrete feature needs them.
 
-No application schema, migration, ingestion connector, background job,
-authentication flow, model pipeline or third-party API is included. An empty
-`hissiyat_test` database is infrastructure for explicitly selected integration
-tests. See `database-development.md` for the Compose and configuration contract.
+The minimal schema consists of `data_sources`, `source_policies`,
+`collection_events`, `source_records` and `text_versions`. `app/core/schema.py`
+defines Core metadata; a frozen initial Alembic revision creates it. The API
+never imports a migration runner or creates tables during startup. Explicit
+migration commands validate the local target and reject unexpected schema
+objects/history. Development upgrades require an operator opt-in and, for an
+agent, prior explicit owner approval. See `research-schema.md` for constraints,
+approval boundaries and test transaction isolation.
+
+No ingestion connector, background job, authentication flow, model pipeline or
+third-party API is included. `hissiyat_test` is reserved for explicitly selected
+integration tests. See `database-development.md` for Compose and configuration.
 
 `app/contracts/` adds Pydantic input validation only. It has no database or API
 integration and does not perform collection, normalization, language detection or
@@ -84,4 +92,4 @@ into application code or UI. Ignore rules are not a substitute for reviewing
 files before a future commit or publication.
 
 No public deployment, user data or production security configuration is provided.
-Stop after Phase 1D until the project owner approves the next task.
+Stop after Phase 2A until the project owner approves the next task.
