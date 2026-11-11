@@ -4,7 +4,12 @@ An AI-supported research platform for exploring human experience and social
 patterns in online data. This repository contains the application foundation and
 local PostgreSQL connectivity, source-independent input validation and a Phase 2A
 minimal research schema with explicit Alembic migrations. It does not collect data
-or produce analytical results.
+or produce analytical results from external data.
+
+Phase 2B adds a [controlled synthetic text-import service](docs/controlled-ingestion.md)
+with atomic test-only persistence, provenance and idempotency. It exposes no
+ingestion endpoint and permits only reviewed synthetic fixtures in `hissiyat_test`.
+Real-data ingestion remains disabled. See [Phase 2B validation](docs/validation-phase-2b.md).
 
 ## Requirements
 
@@ -196,8 +201,8 @@ collection or analysis approval. UI localization does not imply NLP support.
 See [input contracts](docs/data-contracts.md) for implemented validation,
 provenance metadata, safe error reporting and limitations. Synthetic fixtures are
 test inputs, not research observations. The source proposal remains local,
-unchanged and excluded from Git. Phase 1B and Phase 1D have local Git checkpoints;
-Phase 2A changes remain uncommitted for review. See the historical
+unchanged and excluded from Git. The three approved foundation/contract/schema
+commits have been published; Phase 2B changes remain uncommitted for review. See the historical
 [Phase 1D validation](docs/validation-phase-1d.md) and current
-[Phase 2A validation](docs/validation-phase-2a.md). Work beyond Phase 2A requires
+[Phase 2A validation](docs/validation-phase-2a.md). Work beyond Phase 2B requires
 explicit approval.

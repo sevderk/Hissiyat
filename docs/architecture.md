@@ -1,6 +1,6 @@
 # Architecture and conventions
 
-## Current scope through Phase 2A
+## Current scope through Phase 2B
 
 Hissiyat uses a modular monorepo with independently managed frontend and backend
 dependencies. No monorepo orchestration tool or shared package is needed yet.
@@ -39,6 +39,14 @@ approval boundaries and test transaction isolation.
 No ingestion connector, background job, authentication flow, model pipeline or
 third-party API is included. `hissiyat_test` is reserved for explicitly selected
 integration tests. See `database-development.md` for Compose and configuration.
+
+`app/ingestion/` adds a local synthetic-only text batch service using the existing
+contracts and Core tables. A code-owned fingerprint catalog and live test-target
+checks reject arbitrary content and development/production execution. Atomic
+savepoints, database uniqueness and source locks protect record/version identity.
+It has no HTTP route, live adapter or commit operation. Language/quality metadata
+and repeated-observation associations remain input/receipt metadata because the
+existing schema has no corresponding storage. See `controlled-ingestion.md`.
 
 `app/contracts/` adds Pydantic input validation only. It has no database or API
 integration and does not perform collection, normalization, language detection or
@@ -92,4 +100,4 @@ into application code or UI. Ignore rules are not a substitute for reviewing
 files before a future commit or publication.
 
 No public deployment, user data or production security configuration is provided.
-Stop after Phase 2A until the project owner approves the next task.
+Stop after Phase 2B until the project owner approves the next task.

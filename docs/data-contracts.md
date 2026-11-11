@@ -109,11 +109,19 @@ raw `.errors()`, `.json()`, exception strings/tracebacks and request logging are
 not a safe reporting interface. No validation logger or API error handler is
 installed by this phase.
 
+Phase 2B reuses `TextRecordInput` unchanged inside a versioned JSON batch envelope.
+Its closed synthetic-only service resolves source/policy/event/record/version
+identities and enforces exact version conflicts and atomic rollback. The input
+models themselves still grant no permissions or database access. Language and
+quality metadata remain in validated input/receipts, not database assessments.
+See `controlled-ingestion.md` for the implemented boundary and storage limits.
+
 ## Deferred conceptual design
 
 Phase 2A implements physical source/policy/event identity, source records and
 text versions only. Nested input snapshots must eventually be resolved to those
-identities by an approved adapter; no such adapter exists yet. Input language and
+identities by an approved real-data adapter; none exists yet. Phase 2B provides
+only the closed synthetic test mapping. Input language and
 quality labels are not persisted as independent research assessments.
 
 The Phase 1C concepts `LanguageAssessment`, `QualityAssessment`, `CorpusVersion`,
@@ -123,8 +131,9 @@ conceptual persistence/research entities. These input models are not their
 database implementation. Policy rows store supplied references and review
 metadata; they are not a trusted authorization or retention enforcement system.
 
-Batch duplicate detection, cross-record consistency, source-specific format and
-rights verification, source adapters, full historical provenance, corpus versioning,
+Beyond Phase 2B's exact source-record/version checks, general batch deduplication,
+cross-record consistency, source-specific format and rights verification, live
+source adapters, full historical provenance, corpus versioning,
 normalization, NLP, evaluator identities and inter-evaluator agreement are not
 implemented. Fixtures in `backend/tests/fixtures/synthetic_contracts.json` are
 explicitly synthetic and never evidence about a real source or population.

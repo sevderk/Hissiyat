@@ -1,0 +1,271 @@
+{
+  "notice": "Entirely synthetic closed test catalog; no actual research observations or source permissions.",
+  "batches": {
+    "base": {
+      "format_version": "hissiyat.text-import.v1",
+      "fixture_id": "synthetic-phase2b-base",
+      "records": [
+        {
+          "version_key": "synthetic-v1",
+          "record": {
+            "source_record_id": "synthetic-en-001",
+            "text": "Synthetic sentence: the imaginary blue notebook is open.",
+            "published_at": "2026-01-01T08:00:00Z",
+            "retrieved_at": "2026-01-02T12:00:00Z",
+            "language_code": "en",
+            "language_method": "source",
+            "original_reference": "https://example.invalid/synthetic/en-001",
+            "collection": {
+              "collection_id": "20000000-0000-4000-8000-000000000001",
+              "source_policy": {
+                "source_id": "synthetic-phase2b-text",
+                "policy_reference": "urn:synthetic:phase2b:unverified",
+                "usage_status": "unverified"
+              },
+              "method": "file_import",
+              "occurred_at": "2026-01-03T12:00:00Z",
+              "source_reference": "urn:synthetic:phase2b:base"
+            }
+          }
+        },
+        {
+          "version_key": "synthetic-v1",
+          "record": {
+            "source_record_id": "synthetic-tr-001",
+            "text": "Sentetik cümle: Çınar, ışık, öğüt, şişe ve üzüm yalnızca uydurma örneklerdir.",
+            "retrieved_at": "2026-01-02T15:00:00+03:00",
+            "language_code": "tr",
+            "language_method": "human",
+            "collection": {
+              "collection_id": "20000000-0000-4000-8000-000000000001",
+              "source_policy": {
+                "source_id": "synthetic-phase2b-text",
+                "policy_reference": "urn:synthetic:phase2b:unverified",
+                "usage_status": "unverified"
+              },
+              "method": "file_import",
+              "occurred_at": "2026-01-03T12:00:00Z",
+              "source_reference": "urn:synthetic:phase2b:base"
+            }
+          }
+        }
+      ]
+    },
+    "reacquisition": {
+      "format_version": "hissiyat.text-import.v1",
+      "fixture_id": "synthetic-phase2b-reacquisition",
+      "records": [
+        {
+          "version_key": "synthetic-v1",
+          "record": {
+            "source_record_id": "synthetic-en-001",
+            "text": "Synthetic sentence: the imaginary blue notebook is open.",
+            "published_at": "2026-01-01T08:00:00Z",
+            "retrieved_at": "2026-01-04T12:00:00Z",
+            "language_code": "en",
+            "language_method": "source",
+            "original_reference": "https://example.invalid/synthetic/en-001",
+            "collection": {
+              "collection_id": "20000000-0000-4000-8000-000000000002",
+              "source_policy": {
+                "source_id": "synthetic-phase2b-text",
+                "policy_reference": "urn:synthetic:phase2b:unverified",
+                "usage_status": "unverified"
+              },
+              "method": "file_import",
+              "occurred_at": "2026-01-03T12:00:00Z",
+              "source_reference": "urn:synthetic:phase2b:reacquisition"
+            }
+          }
+        },
+        {
+          "version_key": "synthetic-v1",
+          "record": {
+            "source_record_id": "synthetic-tr-001",
+            "text": "Sentetik cümle: Çınar, ışık, öğüt, şişe ve üzüm yalnızca uydurma örneklerdir.",
+            "retrieved_at": "2026-01-04T12:00:00Z",
+            "language_code": "tr",
+            "language_method": "human",
+            "collection": {
+              "collection_id": "20000000-0000-4000-8000-000000000002",
+              "source_policy": {
+                "source_id": "synthetic-phase2b-text",
+                "policy_reference": "urn:synthetic:phase2b:unverified",
+                "usage_status": "unverified"
+              },
+              "method": "file_import",
+              "occurred_at": "2026-01-03T12:00:00Z",
+              "source_reference": "urn:synthetic:phase2b:reacquisition"
+            }
+          }
+        }
+      ]
+    },
+    "new-version": {
+      "format_version": "hissiyat.text-import.v1",
+      "fixture_id": "synthetic-phase2b-new-version",
+      "records": [
+        {
+          "version_key": "synthetic-v2",
+          "record": {
+            "source_record_id": "synthetic-en-001",
+            "text": "Synthetic sentence: the imaginary blue notebook is now closed.",
+            "published_at": "2026-01-01T08:00:00Z",
+            "retrieved_at": "2026-01-05T12:00:00Z",
+            "language_code": "en",
+            "language_method": "source",
+            "original_reference": "https://example.invalid/synthetic/en-001",
+            "collection": {
+              "collection_id": "20000000-0000-4000-8000-000000000003",
+              "source_policy": {
+                "source_id": "synthetic-phase2b-text",
+                "policy_reference": "urn:synthetic:phase2b:unverified",
+                "usage_status": "unverified"
+              },
+              "method": "file_import",
+              "occurred_at": "2026-01-03T12:00:00Z",
+              "source_reference": "urn:synthetic:phase2b:new-version"
+            }
+          }
+        }
+      ]
+    },
+    "same-content-new-key": {
+      "format_version": "hissiyat.text-import.v1",
+      "fixture_id": "synthetic-phase2b-same-content-new-key",
+      "records": [
+        {
+          "version_key": "synthetic-repeated-content-key",
+          "record": {
+            "source_record_id": "synthetic-en-001",
+            "text": "Synthetic sentence: the imaginary blue notebook is open.",
+            "published_at": "2026-01-01T08:00:00Z",
+            "retrieved_at": "2026-01-02T12:00:00Z",
+            "language_code": "en",
+            "language_method": "source",
+            "original_reference": "https://example.invalid/synthetic/en-001",
+            "collection": {
+              "collection_id": "20000000-0000-4000-8000-000000000004",
+              "source_policy": {
+                "source_id": "synthetic-phase2b-text",
+                "policy_reference": "urn:synthetic:phase2b:unverified",
+                "usage_status": "unverified"
+              },
+              "method": "file_import",
+              "occurred_at": "2026-01-03T12:00:00Z",
+              "source_reference": "urn:synthetic:phase2b:same-content-new-key"
+            }
+          }
+        }
+      ]
+    },
+    "within-batch": {
+      "format_version": "hissiyat.text-import.v1",
+      "fixture_id": "synthetic-phase2b-within-batch",
+      "records": [
+        {
+          "version_key": "synthetic-v1",
+          "record": {
+            "source_record_id": "synthetic-en-001",
+            "text": "Synthetic sentence: the imaginary blue notebook is open.",
+            "published_at": "2026-01-01T08:00:00Z",
+            "retrieved_at": "2026-01-02T12:00:00Z",
+            "language_code": "en",
+            "language_method": "source",
+            "original_reference": "https://example.invalid/synthetic/en-001",
+            "collection": {
+              "collection_id": "20000000-0000-4000-8000-000000000005",
+              "source_policy": {
+                "source_id": "synthetic-phase2b-text",
+                "policy_reference": "urn:synthetic:phase2b:unverified",
+                "usage_status": "unverified"
+              },
+              "method": "file_import",
+              "occurred_at": "2026-01-03T12:00:00Z",
+              "source_reference": "urn:synthetic:phase2b:within-batch"
+            }
+          }
+        },
+        {
+          "version_key": "synthetic-v1",
+          "record": {
+            "source_record_id": "synthetic-en-001",
+            "text": "Synthetic sentence: the imaginary blue notebook is open.",
+            "published_at": "2026-01-01T08:00:00Z",
+            "retrieved_at": "2026-01-02T12:00:00Z",
+            "language_code": "en",
+            "language_method": "source",
+            "original_reference": "https://example.invalid/synthetic/en-001",
+            "collection": {
+              "collection_id": "20000000-0000-4000-8000-000000000005",
+              "source_policy": {
+                "source_id": "synthetic-phase2b-text",
+                "policy_reference": "urn:synthetic:phase2b:unverified",
+                "usage_status": "unverified"
+              },
+              "method": "file_import",
+              "occurred_at": "2026-01-03T12:00:00Z",
+              "source_reference": "urn:synthetic:phase2b:within-batch"
+            }
+          }
+        }
+      ]
+    },
+    "other-source": {
+      "format_version": "hissiyat.text-import.v1",
+      "fixture_id": "synthetic-phase2b-other-source",
+      "records": [
+        {
+          "version_key": "synthetic-v1",
+          "record": {
+            "source_record_id": "synthetic-en-001",
+            "text": "Synthetic sentence: the imaginary blue notebook is open.",
+            "published_at": "2026-01-01T08:00:00Z",
+            "retrieved_at": "2026-01-02T12:00:00Z",
+            "language_code": "en",
+            "language_method": "source",
+            "original_reference": "https://example.invalid/synthetic/en-001",
+            "collection": {
+              "collection_id": "20000000-0000-4000-8000-000000000006",
+              "source_policy": {
+                "source_id": "synthetic-phase2b-other",
+                "policy_reference": "urn:synthetic:phase2b:unknown",
+                "usage_status": "unknown"
+              },
+              "method": "file_import",
+              "occurred_at": "2026-01-03T12:00:00Z",
+              "source_reference": "urn:synthetic:phase2b:other-source"
+            }
+          }
+        }
+      ]
+    },
+    "reference": {
+      "format_version": "hissiyat.text-import.v1",
+      "fixture_id": "synthetic-phase2b-reference",
+      "records": [
+        {
+          "version_key": "synthetic-v1",
+          "record": {
+            "source_record_id": "synthetic-reference-001",
+            "published_at": "2026-01-01T08:00:00Z",
+            "retrieved_at": "2026-01-02T12:00:00Z",
+            "original_reference": "https://example.invalid/synthetic/en-001",
+            "collection": {
+              "collection_id": "20000000-0000-4000-8000-000000000007",
+              "source_policy": {
+                "source_id": "synthetic-phase2b-text",
+                "policy_reference": "urn:synthetic:phase2b:unverified",
+                "usage_status": "unverified"
+              },
+              "method": "file_import",
+              "occurred_at": "2026-01-03T12:00:00Z",
+              "source_reference": "urn:synthetic:phase2b:reference"
+            },
+            "content_reference": "urn:synthetic:phase2b:permitted-content"
+          }
+        }
+      ]
+    }
+  }
+}
