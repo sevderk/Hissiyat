@@ -1,6 +1,6 @@
 # Architecture and conventions
 
-## Current scope through Phase 2B
+## Current application scope
 
 Hissiyat uses a modular monorepo with independently managed frontend and backend
 dependencies. No monorepo orchestration tool or shared package is needed yet.
@@ -11,10 +11,11 @@ dependencies. No monorepo orchestration tool or shared package is needed yet.
 - Future analysis: Python; models will be selected through experiments.
 - Development: local Windows environment, 16 GB RAM; GPU availability unconfirmed.
 
-The landing page is informational. It does not display simulated research
-findings. `/api/v1/health` is process liveness; `/api/v1/health/ready` performs
+The localized home page presents two synthetic analysis views. Its same-origin
+demo routes read fixed aggregates from the local FastAPI service. The
+[Phase 4A dashboard guide](analysis-demo.md) describes the contract and setup.
+`/api/v1/health` reports process liveness. `/api/v1/health/ready` performs
 an authenticated database connectivity check and returns 503 on failure.
-The frontend does not call the backend at this stage.
 
 ## Backend boundaries
 
@@ -48,9 +49,8 @@ It has no HTTP route, live adapter or commit operation. Language/quality metadat
 and repeated-observation associations remain input/receipt metadata because the
 existing schema has no corresponding storage. See `controlled-ingestion.md`.
 
-`app/contracts/` adds Pydantic input validation only. It has no database or API
-integration and does not perform collection, normalization, language detection or
-analysis. Text inputs and trend observations have separate models. Nested policy
+`app/contracts/` provides Pydantic input validation. Text inputs and trend
+observations have separate models. Nested policy
 and collection metadata provide input-level provenance without database foreign
 keys. See `data-contracts.md` for required metadata and validation boundaries.
 

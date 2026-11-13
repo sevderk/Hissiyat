@@ -1,7 +1,7 @@
 {
   "Metadata": {
-    "title": "Hissiyat | İnsan deneyimi ve toplumsal örüntüler",
-    "description": "Çevrim içi verilerde insan deneyimi ve toplumsal örüntülerin keşfini destekleyen araştırma platformu."
+    "title": "Hissiyat | Analiz panosu",
+    "description": "İnsan deneyimi ve arama ilgisi için sentetik analiz gösterimi."
   },
   "Navigation": {
     "projectName": "Hissiyat",
@@ -11,14 +11,83 @@
     "english": "English",
     "skipToContent": "Ana içeriğe geç"
   },
-  "Home": {
-    "eyebrow": "İnsan deneyimine odaklanan araştırma",
-    "title": "Hissiyat",
-    "description": "Çevrim içi verilerde konuların, duyguların, ihtiyaçların ve deneyimlerin birbiriyle ilişkisini ve zaman içindeki değişimini keşfetmeyi amaçlayan yapay zekâ destekli bir araştırma platformu.",
-    "status": "Geliştirme aşamasında",
-    "statusDescription": "Şu anda uygulamanın temel altyapısı hazırlanıyor. Veri toplama ve analiz özellikleri henüz kullanıma açık değil.",
-    "principle": "Araştırma yaklaşımı",
-    "principleDescription": "Amaç, insan deneyimi hakkında kesin hükümler vermek değil; bağlamı ve veri sınırlılıklarını koruyarak örüntülerin incelenmesini desteklemek."
+  "Dashboard": {
+    "title": "Analiz panosu",
+    "intro": "Çevrim içi insan deneyimini ve arama ilgisini iki ayrı veri görünümünde keşfedin.",
+    "noticeTitle": "Sentetik gösterim",
+    "notice": "Tüm değerler kurgusaldır ve araştırma bulgusu olarak kullanılamaz.",
+    "methodology": "Yöntem ve kaynak",
+    "human": {
+      "source": "Kurgusal metin verisi · CareerNet pilotundan esinlendi",
+      "title": "İnsan deneyimi analizi",
+      "description": "Eğitim ve kariyer hakkında yazılan metinlerde konu, duygu, ihtiyaç ve deneyim etiketleri.",
+      "cohort": "Metin kohortu",
+      "documents": "Kurgusal belge",
+      "method": "Her etiket, o etiketi taşıyan kurgusal belgelerin sayısını gösterir. Oran, bu sayının seçili kohorttaki toplam belge sayısına bölünmesiyle hesaplanır. Bir belge birden fazla etiket taşıyabilir ve oranların toplamı %100’ü aşabilir.",
+      "limit": "Duygular, kurgusal yazarların açık ifadelerini temsil eder. Bu örnekler psikolojik durum, nüfus yaygınlığı, model başarımı veya bağımsız insan değerlendirmesi hakkında kanıt sağlamaz."
+    },
+    "cohorts": {
+      "general": "Genel örneklem",
+      "uncertainty-enriched": "Belirsizlik odaklı örneklem"
+    },
+    "caveats": {
+      "general": "Kurgusal kaynak çerçevesinden genel bir örneklem. Oranlar bu kohortun belge sayısına dayanır.",
+      "uncertainty-enriched": "Kurgusal belirsizlik sinyalleriyle zenginleştirilmiş örneklem. Oranlar yalnızca bu kohortu betimler."
+    },
+    "groups": {
+      "topics": "Konular ve temalar",
+      "emotions": "Açıkça ifade edilen duygular",
+      "needs": "İfade edilen ihtiyaçlar",
+      "experiences": "Aktarılan deneyimler"
+    },
+    "categories": {
+      "education": "Eğitim kararları",
+      "career_paths": "Kariyer yolları",
+      "job_market": "İş piyasası",
+      "reskilling": "Yeni beceri edinme",
+      "hope": "Umut",
+      "concern": "Kaygı",
+      "frustration": "Hayal kırıklığı",
+      "relief": "Rahatlama",
+      "guidance": "Rehberlik",
+      "information": "Bilgi",
+      "support": "Destek",
+      "opportunities": "Fırsatlar",
+      "study_choice": "Eğitim seçimi",
+      "job_search": "İş arama",
+      "career_change": "Kariyer değişikliği",
+      "skills_training": "Beceri eğitimi"
+    },
+    "categoryValue": "{total, number} belgeden {count, number} tanesi, {ratio}",
+    "search": {
+      "source": "Kurgusal zaman serisi · Google Trends’ten esinlendi",
+      "title": "Arama ilgisi analizi",
+      "description": "Kurgusal bir aramanın haftalık göreli ilgi endeksi.",
+      "queryLabel": "Kurgusal sorgu",
+      "query": "Yörünge serası çıraklığı",
+      "geographyLabel": "Coğrafya",
+      "geography": "Kurgusal Liman Bölgesi",
+      "periodLabel": "Zaman aralığı birimi",
+      "weekly": "Haftalık",
+      "rangeLabel": "Tarih aralığı",
+      "scale": "Göreli ilgi endeksi · 0–100",
+      "coverage": "{weeks, number} haftanın {observed, number} tanesinde değer var",
+      "chartLabel": "Haftalık kurgusal arama ilgisi. Eksik veya bastırılmış haftalarda çizgi kesilir.",
+      "observed": "Kurgusal değer",
+      "missing": "Eksik",
+      "suppressed": "Bastırılmış",
+      "values": "Haftalık değerler",
+      "method": "Sabit kurgusal seri, 0–100 ölçeğinde göreli bir endeks gösterir. Eksik ve bastırılmış haftalar sayısal değer taşımaz ve çizgide boşluk olarak kalır.",
+      "limit": "Endeks gerçek Google Trends ölçümü, kişi sayısı veya mutlak arama hacmi değildir. Metin kohortlarından bağımsızdır ve iki veri görünümü arasında nedensellik göstermez."
+    },
+    "states": {
+      "loading": "Demo verileri yükleniyor…",
+      "unavailable": "Demo API’sine ulaşılamıyor.",
+      "invalid": "Demo yanıtı beklenen veri yapısıyla eşleşmiyor.",
+      "empty": "Gösterilecek demo verisi yok.",
+      "noCategories": "Bu grupta gösterilecek kategori yok.",
+      "retry": "Tekrar dene"
+    }
   },
   "NotFound": {
     "title": "Sayfa bulunamadı",

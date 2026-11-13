@@ -36,7 +36,7 @@ export default async function LocaleLayout({children, params}: Props) {
           <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-10 focus:rounded-lg focus:bg-white focus:p-4">
             {t('skipToContent')}
           </a>
-          <header className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-6 py-6 sm:px-10">
+          <header className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-5 sm:px-8">
             <Link href="/" aria-label={t('home')} className="text-xl font-semibold tracking-tight text-teal-950">
               {t('projectName')}
             </Link>

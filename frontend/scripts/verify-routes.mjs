@@ -32,8 +32,12 @@ for (const [index, locale] of locales.entries()) {
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.ok(html.includes(`<html lang="${locale}"`), `${locale}: document language`);
-  assert.ok(html.includes(messages[index].Home.status), `${locale}: translated status`);
-  assert.ok(html.includes(messages[index].Home.description), `${locale}: translated purpose`);
+  const {Dashboard: dashboard} = messages[index];
+  assert.ok(html.includes(`<h1>${dashboard.title}</h1>`), `${locale}: translated dashboard heading`);
+  assert.ok(html.includes(dashboard.noticeTitle), `${locale}: translated demo notice`);
+  assert.ok(html.includes(dashboard.intro), `${locale}: translated purpose`);
+  assert.ok(html.includes(dashboard.human.title) && html.includes(dashboard.search.title), `${locale}: both domains`);
+  assert.ok(html.includes(dashboard.states.loading), `${locale}: loading state before hydration`);
   assert.match(html, /href="\/tr"/);
   assert.match(html, /href="\/en"/);
   assert.ok(html.includes('aria-current="page"'));

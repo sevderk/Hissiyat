@@ -1,7 +1,7 @@
 {
   "Metadata": {
-    "title": "Hissiyat | Human experience and social patterns",
-    "description": "A research platform supporting the exploration of human experience and social patterns in online data."
+    "title": "Hissiyat | Analysis dashboard",
+    "description": "A synthetic analysis demonstration for human experience and search interest."
   },
   "Navigation": {
     "projectName": "Hissiyat",
@@ -11,14 +11,83 @@
     "english": "English",
     "skipToContent": "Skip to main content"
   },
-  "Home": {
-    "eyebrow": "Research centered on human experience",
-    "title": "Hissiyat",
-    "description": "An AI-supported research platform that aims to explore how topics, emotions, needs, and experiences relate to one another and change over time in online data.",
-    "status": "Under development",
-    "statusDescription": "The application foundation is being prepared. Data collection and analysis features are not available yet.",
-    "principle": "Research approach",
-    "principleDescription": "The aim is to support the study of patterns while preserving context and data limitations, rather than make definitive judgments about human experience."
+  "Dashboard": {
+    "title": "Analysis dashboard",
+    "intro": "Explore online human experience and search interest in two separate data views.",
+    "noticeTitle": "Synthetic demonstration",
+    "notice": "All values are fictional and cannot be used as research findings.",
+    "methodology": "Method and provenance",
+    "human": {
+      "source": "Fictional text data · Inspired by the CareerNet pilot",
+      "title": "Human experience analysis",
+      "description": "Topics, emotions, needs and experiences in writing about education and careers.",
+      "cohort": "Text cohort",
+      "documents": "Fictional documents",
+      "method": "In these fixed fictional aggregates, each label counts the documents that carry it. Each share uses the selected cohort’s document total. A document can carry several labels, so shares can add up to more than 100%.",
+      "limit": "Emotion labels reflect explicit expressions by fictional authors. These examples provide no evidence about psychological states, population prevalence, model performance or independent human evaluation."
+    },
+    "cohorts": {
+      "general": "General sample",
+      "uncertainty-enriched": "Uncertainty-enriched sample"
+    },
+    "caveats": {
+      "general": "A general sample from the fictional source frame. Shares use this cohort’s document count.",
+      "uncertainty-enriched": "A sample enriched using fictional uncertainty cues. Its shares describe this cohort only."
+    },
+    "groups": {
+      "topics": "Topics and themes",
+      "emotions": "Explicitly expressed emotions",
+      "needs": "Expressed needs",
+      "experiences": "Reported experiences"
+    },
+    "categories": {
+      "education": "Education decisions",
+      "career_paths": "Career paths",
+      "job_market": "Job market",
+      "reskilling": "Reskilling",
+      "hope": "Hope",
+      "concern": "Concern",
+      "frustration": "Frustration",
+      "relief": "Relief",
+      "guidance": "Guidance",
+      "information": "Information",
+      "support": "Support",
+      "opportunities": "Opportunities",
+      "study_choice": "Study choice",
+      "job_search": "Job search",
+      "career_change": "Career change",
+      "skills_training": "Skills training"
+    },
+    "categoryValue": "{count, number} of {total, number} documents, {ratio}",
+    "search": {
+      "source": "Fictional time series · Inspired by Google Trends",
+      "title": "Search interest analysis",
+      "description": "A weekly relative interest index for a fictional search query.",
+      "queryLabel": "Fictional query",
+      "query": "Orbital greenhouse apprenticeships",
+      "geographyLabel": "Geography",
+      "geography": "Fictional Harbor District",
+      "periodLabel": "Granularity",
+      "weekly": "Weekly",
+      "rangeLabel": "Date range",
+      "scale": "Relative interest index · 0–100",
+      "coverage": "{observed, number} of {weeks, number} weeks have values",
+      "chartLabel": "Weekly fictional search interest. The line breaks at missing or suppressed weeks.",
+      "observed": "Fictional value",
+      "missing": "Missing",
+      "suppressed": "Suppressed",
+      "values": "Weekly values",
+      "method": "The fixed fictional series uses a relative index on a 0–100 scale. Missing and suppressed weeks have no numeric value and remain gaps in the line.",
+      "limit": "The index contains no actual Google Trends measurements, counts of people or absolute search volumes. It is independent of the text cohorts and cannot establish causation between the two views."
+    },
+    "states": {
+      "loading": "Loading demo data…",
+      "unavailable": "The demo API is unavailable.",
+      "invalid": "The demo response did not match the expected contract.",
+      "empty": "There is no demo data to display.",
+      "noCategories": "There are no categories in this group.",
+      "retry": "Retry"
+    }
   },
   "NotFound": {
     "title": "Page not found",

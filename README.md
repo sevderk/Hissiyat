@@ -62,10 +62,10 @@ transaction and roll back their DDL and synthetic rows afterward.
 
 ## Frontend setup and launch
 
-Open a PowerShell terminal:
+Open a PowerShell terminal at the repository root:
 
 ```powershell
-Set-Location 'C:\Users\Asus\Desktop\Hissiyat\frontend'
+Set-Location frontend
 npm ci
 npm run dev
 ```
@@ -73,14 +73,15 @@ npm run dev
 Open <http://127.0.0.1:3000>. The root redirects to `/tr`, including when the
 browser language is English. The language switcher navigates between `/tr` and
 `/en`. The URL controls the locale; browser detection and locale cookies are
-disabled in this phase. No frontend environment file is needed.
+disabled. The localized home page shows the synthetic analysis dashboard.
+See the [dashboard guide](docs/analysis-demo.md) for the local API setup.
 
 ## Backend setup and launch
 
-Open a second PowerShell terminal:
+Open a second PowerShell terminal at the repository root:
 
 ```powershell
-Set-Location 'C:\Users\Asus\Desktop\Hissiyat\backend'
+Set-Location backend
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.lock.txt
@@ -104,8 +105,9 @@ resolve consistently. Local addresses:
 The health endpoint reports application liveness only. Database readiness is
 available separately at <http://127.0.0.1:8000/api/v1/health/ready>: HTTP 200 when
 an authenticated `SELECT 1` succeeds, otherwise HTTP 503 with a generic response.
-The frontend is independent of the backend; no API calls or CORS configuration
-are needed.
+The localized dashboard requests fictional aggregates through a same-origin
+Next.js route. The local FastAPI service supplies the aggregates without CORS
+configuration or a database connection.
 
 Configuration defaults allow liveness without a local environment file. The
 database setup script above creates backend settings. For manual setup only:
@@ -131,14 +133,15 @@ npm run build
 ```
 
 To verify the production routes, stop the frontend development server with
-Ctrl+C, start the production build, and run the route check in another terminal:
+Ctrl+C, start the production build, and run the route check in another terminal
+opened at the repository root:
 
 ```powershell
 npm run start
 ```
 
 ```powershell
-Set-Location 'C:\Users\Asus\Desktop\Hissiyat\frontend'
+Set-Location frontend
 npm run test:routes
 ```
 

@@ -11,6 +11,7 @@
     "start": "next start --hostname 127.0.0.1",
     "typecheck": "next typegen && tsc --noEmit",
     "lint": "eslint .",
+    "test:demo": "node --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test scripts/demo-contract.test.mjs",
     "test:routes": "node scripts/verify-routes.mjs"
   },
   "dependencies": {
