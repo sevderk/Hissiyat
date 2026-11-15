@@ -2,17 +2,15 @@
 
 from collections import Counter, defaultdict
 import csv
-from dataclasses import asdict, replace
-from datetime import datetime, timedelta, timezone
+from dataclasses import replace
+from datetime import date, datetime, time, timedelta, timezone
 from hashlib import sha256
-import hmac
 import html
 import io
 import json
 import os
 from pathlib import Path
 import re
-import secrets
 import subprocess
 import sys
 import unicodedata
@@ -33,14 +31,15 @@ EXPECTED_HEADER = frozenset("""
     coherency explore_options take_action understanding_purpose validation_support find_resources
     navigate_constraints compare_options unclear_goal soc_code Split reasoning_label
 """.split())
-SCHEMA = "hissiyat_careernet_preparation_v1"
+SCHEMA = "hissiyat_careernet_preparation_v3"
 SEED = 42
 MIN_WORDS = 30
 TARGET = 200
 MAX_ROWS = 10_000
 MAX_QUESTIONS = 4_000
 RETENTION_DAYS = 30
-REVIEW_STATUS = "requires_human_privacy_review"
+PILOT_LAST_DAY = date(2027, 2, 28)
+PILOT_LOCAL_TIME = timezone(timedelta(hours=3))
 MARKUP = re.compile(r"</?[A-Za-z][A-Za-z0-9:-]*(?:\s[^<>]{0,480})?\s*/?>")
 ID = re.compile(r"[1-9][0-9]{0,17}")
 MONTH_NAMES = "january february march april may june july august september october november december".split()
@@ -68,6 +67,10 @@ RISK_PATTERNS = {
         r"|\b(?:University|College) of [A-Z][a-z'-]+\b"
     ),
     "location_cue": re.compile(r"\b(?i:i live in|i am from|i'm from|i moved to|i am based in) [A-Z][\w'-]+"),
+    "indirect_identity_cue": re.compile(
+        r"\b(?i:i work at|i intern at|i am employed by|i volunteer at) [A-Z][\w'-]+"
+        r"|\b(?i:my (?:home |street )?address is|my date of birth is|i was born on)\b"
+    ),
     "possible_minor": re.compile(
         r"\b(?:i am|i'm|aged)\s+(?:1[0-7]|[6-9])(?:\s+years? old\b|[- ]year[- ]old\b|\s+and in\b|[.,;!?]|$)"
         r"|\b(?:i am|i'm) (?:a |in )?(?:high school (?:student|freshman|sophomore|junior|senior)"
@@ -109,6 +112,7 @@ def _source_calendar(value):
 
 def _read_questions(payload):
     rows, year_counts, counts = defaultdict(set), Counter(), Counter()
+    asker_groups = {}
     stream = io.StringIO(payload.decode("utf-8-sig"), newline="")
     reader = csv.reader(stream, strict=True)
     header = next(reader, ())
@@ -120,6 +124,7 @@ def _read_questions(payload):
         if row_count > MAX_ROWS or len(row) != len(header):
             raise PreparationError("invalid_source_csv")
         question, asker, title, body, when = (row[index] for index in columns)
+        del row
         if ("\0" in title or "\0" in body or len(title) > 4_000 or len(body) > 40_000
                 or len(when) > 64 or "\0" in when):
             raise PreparationError("invalid_source_question_fields")
@@ -128,13 +133,20 @@ def _read_questions(payload):
             raise PreparationError("invalid_question_id")
         if asker and not ID.fullmatch(asker):
             raise PreparationError("invalid_asker_id")
-        variant = (asker, " ".join(title.split()), " ".join(body.split()), when)
+        # The source asker ID stays in this lookup, separate from question text.
+        group = str(asker_groups.setdefault(asker, len(asker_groups) + 1)) if asker else ""
+        del asker
+        variant = (group, " ".join(title.split()), " ".join(body.split()), when)
         if variant in rows[question]:
             counts["repeated_identical_answer_rows"] += 1
         rows[question].add(variant)
         if len(rows) > MAX_QUESTIONS:
             raise PreparationError("question_bound_exceeded")
+    stream.close()
+    counts["source_asker_groups"] = len(asker_groups)
+    del asker_groups
     questions, conflict_flags = [], {}
+    excluded_groups = set()
     status_counts = Counter()
     for question, variants in sorted(rows.items()):
         if len(variants) != 1:
@@ -144,6 +156,7 @@ def _read_questions(payload):
                 flags.update(_question_privacy(title, body, _plain(title), _plain(body)))
             if flags:
                 conflict_flags[question] = flags
+                excluded_groups.update(group for group, _, _, _ in variants if group)
             continue
         asker, title, body, when = next(iter(variants))
         status, created_at = _source_calendar(when)
@@ -153,7 +166,8 @@ def _read_questions(payload):
         questions.append(sampling._Question(question, asker, title, body, created_at))
     counts["distinct_question_ids"] = len(rows)
     counts["available_asker_groups"] = len({row.asker_id for row in questions if row.asker_id})
-    return questions, conflict_flags, dict(counts), dict(status_counts), dict(sorted(year_counts.items()))
+    return (questions, conflict_flags, excluded_groups, dict(counts),
+            dict(status_counts), dict(sorted(year_counts.items())))
 
 
 def _privacy_reasons(text):
@@ -166,15 +180,21 @@ def _question_privacy(raw_title, raw_body, title, body):
     return _privacy_reasons(f"{title} {body}".strip()) | _privacy_reasons(html.unescape(f"{raw_title} {raw_body}"))
 
 
-def _quality_frame(questions, review_flags):
-    eligible = []
-    counts, bins = Counter(), Counter()
+def _quality_frame(questions, review_flags, excluded_groups):
+    normalized = []
     for original in questions:
         row = replace(original, title=_plain(original.title), body=_plain(original.body))
-        text = row.title if row.title == row.body else f"{row.title} {row.body}".strip()
         flags = _question_privacy(original.title, original.body, row.title, row.body)
         if flags:
             review_flags[row.question_id] = flags
+            if row.asker_id:
+                excluded_groups.add(row.asker_id)
+        normalized.append(row)
+
+    eligible = []
+    counts, bins = Counter(), Counter()
+    for row in normalized:
+        text = row.title if row.title == row.body else f"{row.title} {row.body}".strip()
         words = [word.casefold() for word in sampling.WORD.findall(text)]
         size = len(words)
         bins[next(label for label, upper in (("0", 0), ("1-14", 14), ("15-29", 29),
@@ -186,8 +206,10 @@ def _quality_frame(questions, review_flags):
         counts["missing_title"] += not row.title
         counts["missing_body"] += not row.body
         counts["missing_asker"] += not row.asker_id
-        if flags:
+        if row.question_id in review_flags:
             counts["excluded_privacy"] += 1
+        elif row.asker_id in excluded_groups:
+            counts["excluded_linked_asker"] += 1
         elif not row.asker_id:
             counts["excluded_missing_asker"] += 1
         elif size < MIN_WORDS:
@@ -225,25 +247,39 @@ def _exclude_duplicates(eligible):
 
 
 def prepare(payload, *, expected_size=SIZE, expected_digest=REFERENCE["publisher_sha256"]):
-    """Return aggregate output and separate in-memory private records."""
+    """Screen and select questions in memory, returning only aggregate results."""
+    aggregate, _, _, _ = _screen_and_select(payload, expected_size=expected_size, expected_digest=expected_digest)
+    return aggregate
+
+
+def _screen_and_select(payload, *, expected_size=SIZE, expected_digest=REFERENCE["publisher_sha256"]):
+    """Share the in-memory selection with local research tools."""
     if len(payload) != expected_size or sha256(payload).hexdigest() != expected_digest:
         raise PreparationError("source_integrity_mismatch")
     try:
-        questions, review_flags, frame, dates, years = _read_questions(payload)
+        questions, review_flags, excluded_groups, frame, dates, years = _read_questions(payload)
     except (UnicodeError, csv.Error):
         raise PreparationError("invalid_source_csv") from None
-    eligible, quality, lengths = _quality_frame(questions, review_flags)
+    eligible, quality, lengths = _quality_frame(questions, review_flags, excluded_groups)
     risks = dict(Counter(flag for flags in review_flags.values() for flag in flags))
     high_risk = sum(
         "credential_cue" in flags or {"possible_minor", "contact"} <= flags
         or {"possible_minor", "name_cue", "school_cue"} <= flags
         for flags in review_flags.values()
     )
-    if high_risk or (
-        risks.get("sensitive_experience", 0) >= max(10, frame["distinct_question_ids"] * .05)
-    ):
-        return {"status": "stopped_for_privacy", "privacy_flags": risks,
-                "high_risk_combination": high_risk}, (), (), ()
+    privacy = {
+        "privacy_flags": risks,
+        "high_risk_combination": high_risk,
+        "flagged_privacy_questions": len(review_flags),
+        "excluded_privacy_questions": len(review_flags) + quality.get("excluded_linked_asker", 0),
+        "excluded_privacy_asker_groups": len(excluded_groups),
+    }
+    systemic_threshold = max(10, frame["distinct_question_ids"] * .05)
+    if high_risk >= systemic_threshold or risks.get("sensitive_experience", 0) >= systemic_threshold:
+        return {"status": "stopped_for_privacy", "privacy_stop_reason": "widespread_risk", **privacy}, (), (), ()
+    if not eligible and review_flags:
+        return {"status": "stopped_for_privacy", "privacy_stop_reason": "no_eligible_questions_after_filtering",
+                **privacy}, (), (), ()
     eligible, duplicates = _exclude_duplicates(eligible)
     calendar = {row.question_id: sampling._calendar(row.created_at) for row in eligible}
     general, general_stats = sampling._general(eligible, calendar, SEED, TARGET, True)
@@ -255,39 +291,23 @@ def prepare(payload, *, expected_size=SIZE, expected_digest=REFERENCE["publisher
     }
     if any(overlap.values()):
         raise PreparationError("cohort_overlap")
-    nonce = secrets.token_bytes(32)
-
-    def alias(domain, identifier):
-        return hmac.digest(nonce, f"{domain}:{identifier}".encode("ascii"), "sha256").hex()
-
-    rows_by_id = {row.question_id: row for row in eligible}
-    memberships, texts = [], []
-    for cohort, members in (("A_general", general), ("B_provisional", enriched)):
-        for member in members:
-            private = asdict(member)
-            private["question_id"] = alias("question", member.question_id)
-            private["asker_id"] = alias("asker", member.asker_id)
-            memberships.append({"cohort": cohort, "status": REVIEW_STATUS, "screened": True,
-                                "human_review_eligible": False, "nlp_ready": False, **private})
-            question = rows_by_id[member.question_id]
-            texts.append({"question_id": private["question_id"], "title": question.title, "body": question.body})
-    flags = tuple({"question_id": alias("question", question), "status": REVIEW_STATUS,
-                   "reason_codes": sorted(reasons), "nlp_ready": False}
-                  for question, reasons in sorted(review_flags.items()))
+    selected = len(general) + len(enriched)
     aggregate = {
-        "status": "prepared_pending_human_review", "schema": SCHEMA,
+        "status": "screening_complete_pending_human_review", "schema": SCHEMA,
         "design": {"sampling_schema": sampling.SCHEMA, "seed": SEED, "min_words": MIN_WORDS,
                    "temporal_strata_requested": True, "near_duplicate_jaccard_minimum": 0.9},
         "frame": frame, "quality": quality, "word_count_bins": lengths, "timestamp_status": dates,
-        "timestamp_year_counts": years, "privacy_flags": risks, "duplicates": duplicates,
+        "timestamp_year_counts": years, **privacy, "duplicates": duplicates,
         "sampling_frame_questions": len(eligible),
         "sampling_frame_askers": len({row.asker_id for row in eligible}),
         "cohorts": cohort_summaries, "cross_cohort_overlap": overlap,
-        "requires_human_privacy_review_selected": len(memberships),
-        "excluded_privacy_queue": len(flags), "human_review_eligible": 0, "nlp_ready": 0,
-        "selected_not_nlp_ready": len(memberships),
+        "requires_human_privacy_review_selected": selected,
+        "human_review_eligible": 0, "nlp_ready": 0,
+        "selected_not_nlp_ready": selected,
     }
-    return aggregate, tuple(memberships), tuple(texts), flags
+    selected_ids = {member.question_id for member in general + enriched}
+    source_questions = tuple(question for question in questions if question.question_id in selected_ids)
+    return aggregate, source_questions, general, enriched
 
 
 class ReleaseRedirect(HTTPRedirectHandler):
@@ -310,7 +330,7 @@ def _download():
         return response.read(SIZE + 1)
 
 
-def _private_directory(path, *, base=None):
+def _private_directory(path, *, base=None, phase="4c", allowed_files=()):
     base = base or Path(os.environ["LOCALAPPDATA"]) / "Hissiyat"
     try:
         resolved = path.resolve(strict=True)
@@ -319,14 +339,16 @@ def _private_directory(path, *, base=None):
     repository = Path(__file__).resolve().parents[2]
     if (not path.is_absolute() or path != resolved or base.is_symlink() or base.is_junction() or
             resolved.parent != base.resolve() or resolved.is_relative_to(repository) or
-            not re.fullmatch(r"phase-4c-[a-f0-9]{32}", resolved.name) or
-            not resolved.is_dir() or path.is_symlink() or path.is_junction() or
-            any(resolved.iterdir())):
+            not re.fullmatch(rf"phase-{phase}-[a-f0-9]{{32}}", resolved.name) or
+            not resolved.is_dir() or path.is_symlink() or path.is_junction()):
         raise PreparationError("unexpected_private_output_directory")
+    for item in resolved.iterdir():
+        if item.name not in allowed_files or item.is_symlink() or item.is_junction() or not item.is_file():
+            raise PreparationError("unexpected_private_output_directory")
     return resolved
 
 
-def _check_windows_access(directory):
+def _check_windows_access(directory, *, verify_files=False):
     # Check only this directory. Ignore and do not emit paths, accounts or ACL details.
     command = r"""
     $ErrorActionPreference = 'Stop'
@@ -343,21 +365,30 @@ def _check_windows_access(directory):
         $rules[0].FileSystemRights -ne 'FullControl' -or
         [int]$rules[0].InheritanceFlags -ne 3 -or
         $rules[0].PropagationFlags -ne 'None' -or $rules[0].IsInherited) { exit 2 }
+    if ($env:HISSIYAT_PHASE4C_VERIFY_FILES -eq '1') {
+        foreach ($file in [IO.Directory]::EnumerateFiles($directory)) {
+            $fileAcl = [IO.File]::GetAccessControl($file)
+            $fileOwner = $fileAcl.GetOwner([Security.Principal.SecurityIdentifier]).Value
+            $fileRules = @($fileAcl.GetAccessRules($true,$true,[Security.Principal.SecurityIdentifier]))
+            if ($fileOwner -ne $identity -or $fileRules.Length -ne 1 -or
+                $fileRules[0].IdentityReference.Value -ne $identity -or
+                $fileRules[0].AccessControlType -ne 'Allow' -or
+                $fileRules[0].FileSystemRights -ne 'FullControl' -or -not $fileRules[0].IsInherited) { exit 2 }
+        }
+    }
     """
     result = subprocess.run(
         ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", command],
-        env={**os.environ, "HISSIYAT_PHASE4C_OUTPUT": str(directory)},
+        env={**os.environ, "HISSIYAT_PHASE4C_OUTPUT": str(directory),
+             "HISSIYAT_PHASE4C_VERIFY_FILES": "1" if verify_files else "0"},
         capture_output=True, timeout=15, check=False,
     )
     if result.returncode:
         raise PreparationError("private_output_permissions_not_verified")
 
 
-def _store_outputs(directory, provenance, aggregate, memberships, texts, flags):
+def _store_outputs(directory, provenance, aggregate):
     outputs = {"provenance.json": provenance, "aggregate.json": aggregate}
-    if aggregate["status"] != "stopped_for_privacy":
-        outputs.update({"membership.json": memberships, "privacy_flags.json": flags,
-                        "candidate_text.json": texts})
     created = []
     try:
         for filename, data in outputs.items():
@@ -386,33 +417,72 @@ def _console_summary(aggregate):
     for field in ("privacy_flags", "timestamp_year_counts"):
         if field in summary:
             summary[field] = {key: suppress_small(count) for key, count in summary[field].items()}
-    if "high_risk_combination" in summary:
-        summary["high_risk_combination"] = suppress_small(summary["high_risk_combination"])
+    for field in ("high_risk_combination", "flagged_privacy_questions",
+                  "excluded_privacy_questions", "excluded_privacy_asker_groups"):
+        if field in summary:
+            summary[field] = suppress_small(summary[field])
+    if "quality" in summary:
+        summary["quality"] = {
+            key: suppress_small(count) if key in {"excluded_privacy", "excluded_linked_asker"} else count
+            for key, count in summary["quality"].items()
+        }
     return summary
 
 
+def _retention_deadline(now, requested_day=None):
+    if requested_day is not None:
+        try:
+            last_day = date.fromisoformat(requested_day)
+        except ValueError:
+            raise PreparationError("invalid_retention_date") from None
+        if last_day.isoformat() != requested_day or last_day > PILOT_LAST_DAY:
+            raise PreparationError("invalid_retention_date")
+    else:
+        last_day = PILOT_LAST_DAY
+    deadline = datetime.combine(last_day + timedelta(days=1), time.min, PILOT_LOCAL_TIME).astimezone(timezone.utc)
+    if requested_day is None:
+        deadline = min(deadline, now + timedelta(days=RETENTION_DAYS))
+    if deadline <= now:
+        raise PreparationError("retention_deadline_elapsed")
+    return deadline
+
+
 def main():
-    if len(sys.argv) != 3 or sys.argv[1] != "--approved-careernet-v1.1":
+    args = sys.argv[1:]
+    if len(args) not in (2, 4) or args[0] != "--approved-careernet-v1.1":
         print('{"status":"explicit_owner_approval_required"}')
         return 2
     try:
-        output = _private_directory(Path(sys.argv[2]))
+        if len(args) == 4 and args[2] != "--retain-until":
+            raise PreparationError("invalid_retention_option")
+        requested_day = args[3] if len(args) == 4 else None
+        _retention_deadline(datetime.now(timezone.utc), requested_day)
+        output = _private_directory(Path(args[1]))
         _check_windows_access(output)
         payload = _download()
         received = datetime.now(timezone.utc)
-        aggregate, memberships, texts, flags = prepare(payload)
+        aggregate = prepare(payload)
         del payload
+        if aggregate["status"] == "stopped_for_privacy":
+            default_deadline = _retention_deadline(received)
+            deadline = min(default_deadline, _retention_deadline(received, requested_day))
+        else:
+            deadline = _retention_deadline(received, requested_day)
         provenance = {
             **REFERENCE, "download_url": URL, "size_bytes": SIZE, "checksum_verified": True,
             "acquired_utc": received.isoformat(timespec="seconds"),
-            "delete_private_records_by_utc": (received + timedelta(days=RETENTION_DAYS)).isoformat(timespec="seconds"),
+            "delete_private_records_by_utc": deadline.isoformat(timespec="seconds"),
+            "retention_scope": "provenance_and_aggregate_only",
+            "manual_deletion_required": True,
             "attribution": "CareerNet v1.1 by Renaissance Philanthropy and The Learning Agency, "
                            "from CareerVillage.org contributions, CC BY 4.0",
             "license_url": "https://creativecommons.org/licenses/by/4.0/",
             "changes": "Question-level filtering, whitespace and markup normalization, privacy screening, and sampling.",
         }
         _check_windows_access(_private_directory(output))
-        _store_outputs(output, provenance, aggregate, memberships, texts, flags)
+        if datetime.now(timezone.utc) >= deadline:
+            raise PreparationError("retention_deadline_elapsed")
+        _store_outputs(output, provenance, aggregate)
         print(json.dumps(_console_summary(aggregate), sort_keys=True))
         return 3 if aggregate["status"] == "stopped_for_privacy" else 0
     except PreparationError as error:
