@@ -61,7 +61,7 @@ function Distribution({group, data}: {group: Group; data: TextAnalysis}) {
   const entries = data.groups[group];
   return (
     <article className={'dashboard-card distribution ' + group} aria-labelledby={'distribution-' + group}>
-      <h3 id={'distribution-' + group}>{t(`groups.${group}`)}</h3>
+      <h4 id={'distribution-' + group}>{t(`groups.${group}`)}</h4>
       {entries.length ? (
         <ul className="distribution-list">
           {entries.map(({key, count}) => {
@@ -104,7 +104,7 @@ function HumanExperience() {
       <div className="analysis-heading">
         <div>
           <p className="source-label">{t('human.source')}</p>
-          <h2 id="human-heading">{t('human.title')}</h2>
+          <h3 id="human-heading">{t('human.title')}</h3>
           <p className="section-description">{t('human.description')}</p>
         </div>
         <fieldset className="cohort-picker">
@@ -166,7 +166,7 @@ function InterestChart({points}: {points: InterestPoint[]}) {
   return (
     <div className="dashboard-card trend-card" data-testid="trend-data">
       <div className="trend-meta">
-        <div><span>{t('search.queryLabel')}</span><h3>{t('search.query')}</h3></div>
+        <div><span>{t('search.queryLabel')}</span><h4>{t('search.query')}</h4></div>
         <div><span>{t('search.geographyLabel')}</span><strong>{t('search.geography')}</strong></div>
         <div><span>{t('search.periodLabel')}</span><strong>{t('search.weekly')}</strong></div>
         <div><span>{t('search.rangeLabel')}</span><strong>{date(points[0].date)} – {date(points[points.length - 1].date)}</strong></div>
@@ -227,7 +227,7 @@ function SearchInterestSection() {
       <div className="analysis-heading">
         <div>
           <p className="source-label">{t('search.source')}</p>
-          <h2 id="search-heading">{t('search.title')}</h2>
+          <h3 id="search-heading">{t('search.title')}</h3>
           <p className="section-description">{t('search.description')}</p>
         </div>
       </div>

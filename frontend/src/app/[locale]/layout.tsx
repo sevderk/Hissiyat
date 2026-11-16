@@ -1,6 +1,6 @@
 import type {Metadata} from 'next';
 import {hasLocale, NextIntlClientProvider} from 'next-intl';
-import {getTranslations, setRequestLocale} from 'next-intl/server';
+import {getMessages, getTranslations, setRequestLocale} from 'next-intl/server';
 import {notFound} from 'next/navigation';
 import {LanguageSwitcher} from '@/components/language-switcher';
 import {Link} from '@/i18n/navigation';
@@ -28,11 +28,12 @@ export default async function LocaleLayout({children, params}: Props) {
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
   const t = await getTranslations('Navigation');
+  const {Dashboard, Navigation} = await getMessages();
 
   return (
     <html lang={locale}>
       <body className="min-h-screen antialiased">
-        <NextIntlClientProvider>
+        <NextIntlClientProvider messages={{Dashboard, Navigation}}>
           <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-10 focus:rounded-lg focus:bg-white focus:p-4">
             {t('skipToContent')}
           </a>

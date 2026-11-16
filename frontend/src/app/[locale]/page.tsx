@@ -1,14 +1,22 @@
-import {hasLocale} from 'next-intl';
-import {getTranslations, setRequestLocale} from 'next-intl/server';
+import {hasLocale, NextIntlClientProvider} from 'next-intl';
+import {getMessages, getTranslations, setRequestLocale} from 'next-intl/server';
 import {notFound} from 'next/navigation';
 import {AnalysisDashboard} from '@/components/analysis-dashboard';
+import {LocalAnalysis} from '@/components/local-analysis';
+import {ResearchFindings} from '@/components/research-findings';
 import {routing} from '@/i18n/routing';
+import {isLocalAnalysisEnabled} from '@/lib/local-analysis-contract';
+import {isResearchPreviewEnabled} from '@/lib/research-preview';
 
 export default async function HomePage({params}: {params: Promise<{locale: string}>}) {
   const {locale} = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
   const t = await getTranslations('Dashboard');
+  const showResearch = isResearchPreviewEnabled(process.env.NODE_ENV, process.env.HISSIYAT_RESEARCH_PREVIEW);
+  const researchTitle = showResearch ? (await getTranslations('Research'))('title') : null;
+  const showLocalAnalysis = isLocalAnalysisEnabled(process.env.NODE_ENV, process.env.HISSIYAT_LOCAL_TEXT_ANALYSIS);
+  const analysisMessages = showLocalAnalysis ? (await getMessages()).LocalAnalysis : null;
 
   return (
     <main id="main-content" tabIndex={-1} className="dashboard-shell">
@@ -16,13 +24,26 @@ export default async function HomePage({params}: {params: Promise<{locale: strin
         <h1>{t('title')}</h1>
         <p>{t('intro')}</p>
       </div>
-      <aside className="demo-notice" aria-label={t('noticeTitle')}>
-        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-          <circle cx="12" cy="12" r="9" /><path d="M12 11v5m0-8v.01" strokeLinecap="round" />
-        </svg>
-        <p><strong>{t('noticeTitle')}</strong> {t('notice')}</p>
-      </aside>
-      <AnalysisDashboard />
+      {(showResearch || analysisMessages) && (
+        <nav className="dashboard-section-nav" aria-label={t('sectionNavigation')}>
+          {analysisMessages && <a href="#local-text-analysis">{analysisMessages.title}</a>}
+          {showResearch && <a href="#research-findings">{researchTitle}</a>}
+          <a href="#synthetic-demo">{t('noticeTitle')}</a>
+        </nav>
+      )}
+      {analysisMessages && (
+        <NextIntlClientProvider messages={{LocalAnalysis: analysisMessages}}>
+          <LocalAnalysis />
+        </NextIntlClientProvider>
+      )}
+      {showResearch && <ResearchFindings />}
+      <section id="synthetic-demo" className="analysis-section synthetic-section" aria-labelledby="synthetic-heading">
+        <div className="analysis-heading">
+          <h2 id="synthetic-heading">{t('noticeTitle')}</h2>
+        </div>
+        <p className="demo-notice">{t('notice')}</p>
+        <AnalysisDashboard />
+      </section>
     </main>
   );
 }

@@ -1,7 +1,7 @@
 {
   "Metadata": {
     "title": "Hissiyat | Analiz panosu",
-    "description": "İnsan deneyimi ve arama ilgisi için sentetik analiz gösterimi."
+    "description": "Çevrim içi insan deneyimi ve arama ilgisi için analiz panosu."
   },
   "Navigation": {
     "projectName": "Hissiyat",
@@ -13,9 +13,10 @@
   },
   "Dashboard": {
     "title": "Analiz panosu",
-    "intro": "Çevrim içi insan deneyimini ve arama ilgisini iki ayrı veri görünümünde keşfedin.",
+    "intro": "Çevrim içi insan deneyimini ve arama ilgisini inceleyin.",
+    "sectionNavigation": "Pano bölümleri",
     "noticeTitle": "Sentetik gösterim",
-    "notice": "Tüm değerler kurgusaldır ve araştırma bulgusu olarak kullanılamaz.",
+    "notice": "Bu bölümdeki grafikler kurgusal metin ve arama ilgisi verileriyle arayüzü örnekler.",
     "methodology": "Yöntem ve kaynak",
     "human": {
       "source": "Kurgusal metin verisi · CareerNet pilotundan esinlendi",
@@ -88,6 +89,68 @@
       "noCategories": "Bu grupta gösterilecek kategori yok.",
       "retry": "Tekrar dene"
     }
+  },
+  "LocalAnalysis": {
+    "title": "Metinleri analiz et",
+    "local": "Yerel metin analizi",
+    "intro": "Küçük bir İngilizce metin koleksiyonundaki konu gruplarını TF-IDF + NMF veya MiniLM + K-means ile keşfedin.",
+    "examples": "Metin koleksiyonu",
+    "own": "Kendi deneme metinlerinizi girin",
+    "career": "Kurgusal · Eğitim ve kariyer",
+    "technology": "Kurgusal · Teknoloji ve dijital hizmetler",
+    "method": "Analiz yöntemi",
+    "methods": {"nmf": "TF-IDF + NMF", "minilm": "MiniLM + K-means", "both": "İki yöntemi karşılaştır"},
+    "clusters": "Konu grubu sayısı",
+    "texts": "İngilizce metinler",
+    "inputHelp": "Her satıra bir metin gelecek şekilde {min, number}–{max, number} metin girin. Her metin en fazla {chars, number} karakter olabilir. Uygulama metinleri saklamaz. Kurgusal veya kimlik belirleyici bilgilerden uygun biçimde arındırılmış deneme metinleri kullanın.",
+    "analyze": "Analiz et",
+    "clear": "Temizle",
+    "textTotal": "{count, number} metin",
+    "loading": "Bu bilgisayarda analiz ediliyor…",
+    "resultTitle": "Keşif amaçlı konu grupları",
+    "resultSummary": "{count, number} metin, {k, number} istenen konu grubu.",
+    "nmfHelp": "NMF sözcük örüntülerini kullanır. Gösterilen sözcükler, konuda yüksek ağırlığı olan ve tekrarlanan sözcüklerdir.",
+    "minilmHelp": "K-means MiniLM metin vektörlerini gruplar. Gösterilen sözcükler, gruba atanan metinlerden işlem sonrasında çıkarılan betimleyicilerdir.",
+    "agreementTitle": "Gruplamalar arası uyum",
+    "agreementValue": "Düzeltilmiş Rand İndeksi (ARI): {ari}. Her iki yöntemin de gruba atadığı {count, number} metin karşılaştırıldı.",
+    "agreementUnavailable": "ARI hesaplamak için ortak atama veya dolu grup sayısı yetersiz.",
+    "agreementHelp": "ARI aynı metinlerin nasıl gruplandığını karşılaştırır ve şansla beklenen uyumu hesaba katar. Konu doğruluğu bağımsız tema değerlendirmesi gerektirir.",
+    "group": "{number, number}. grup",
+    "keywords": "Geçici anahtar sözcükler",
+    "noKeywords": "Gösterim koşullarını karşılayan sözcük yok.",
+    "unassigned": "{count, number} metin bir gruba atanamadı.",
+    "iterationLimit": "Model yineleme sınırına ulaştı. Bu gruplamayı yorumlarken dikkatli olun.",
+    "limits": "Grup numaraları keyfîdir. Boyutlar yalnızca girilen metinleri betimler. Bir anahtar sözcük, izinli söz dağarcığında bulunmalı ve kendi grubunda en az üç farklı metinde görülmelidir. Konular insan değerlendirmesi gerektirir. Duygu, ihtiyaç, deneyim ve klinik sınıflandırma bu analizin kapsamı dışındadır.",
+    "errors": {
+      "textCount": "Boş olmayan 12 ile 100 arasında satır girin.",
+      "tooLarge": "Her metni en fazla 500 karakter, toplam isteği en fazla 64 KiB ile sınırlayın.",
+      "invalidInput": "Yerel servis girdiyi reddetti. Metin satırlarını ve grup sayısını kontrol edin.",
+      "insufficientVariation": "Seçilen grup sayısı için farklı sözcükler yetersiz. Daha çeşitli metinler deneyin veya iki grup seçin.",
+      "busy": "Bir analiz çalışıyor. Biraz bekleyip tekrar deneyin.",
+      "modelUnavailable": "Doğrulanmış yerel MiniLM modeli yüklenemedi. Yerel model kurulumunu kontrol edin veya TF-IDF + NMF’yi seçin.",
+      "unavailable": "Yerel analize ulaşılamıyor. Yerel API’nin analiz etkin olarak çalıştığını kontrol edin."
+    }
+  },
+  "Research": {
+    "title": "Araştırma Bulguları",
+    "preview": "Keşif amaçlı gerçek veri pilotu · Yerel önizleme",
+    "sample": "İlk vaka çalışmasında kariyer odaklı, incelemeden geçmiş {questions, number} İngilizce soru kullanıldı.",
+    "comparison": "TF-IDF + NMF ve MiniLM + K-means karşılaştırması",
+    "measure": "Ölçüm",
+    "clusterCount": "k = {k, number}",
+    "betweenMethods": "Yöntemler arası uyum (ARI)",
+    "nmfStability": "TF-IDF + NMF medyan kararlılığı",
+    "miniLmStability": "MiniLM + K-means medyan kararlılığı",
+    "scale": "Çubuklar, burada gözlenen pozitif ARI değerlerini 0–1 ölçeğinde gösterir.",
+    "readingTitle": "Karşılaştırmayı nasıl okumalı?",
+    "ari": "Düzeltilmiş Rand İndeksi (ARI), aynı soruların nasıl gruplandığını karşılaştırır ve şansla beklenen uyumu hesaba katar. 1 aynı gruplamayı, 0 civarı şans düzeyinde uyumu gösterir. Sınıflandırma doğruluğu bu deneyin kapsamı dışındadır.",
+    "stability": "Kararlılık, her defasında örneklemin yaklaşık {share}’i kullanılarak yapılan {repetitions, number} yeniden örneklemede kümelerin ne kadar benzer kaldığını gösterir.",
+    "observed": "Ana deneyde her iki yöntem de iki kümeyle (k = 2) daha kararlıydı. Temaların geçerliliği ve yöntem üstünlüğü için başka kanıtlar gerekir.",
+    "reviewTitle": "İnsan incelemesi ve örneklem sınırları",
+    "review": "Etiketleri ilk değerlendirici verdi. İkinci değerlendirici, amaçlı seçilen {questions, number} soruyu bağımsız olarak inceledi. Uyum kategoriye göre değişti. Bu küçük örtüşme örneklemi genel değerlendirici güvenilirliğini belirlemek için yetersizdir.",
+    "limits": "Bu küçük ve seçilmiş İngilizce kariyer örneklemi yalnızca pilotu betimler. Nüfus genellemesi, klinik kaygı tespiti ve nedensel çıkarım deneyin kapsamı dışındadır.",
+    "source": "Kaynak <release>CareerNet v1.1 — Renaissance Philanthropy</release> · <license>CC BY 4.0</license>",
+    "attribution": "Hissiyat, veri kümesinden bir örneklem seçerek yöntemleri karşılaştırdı. Analiz ve yorumlar Hissiyat projesine aittir. Kaynak atfı, yayımlayıcı desteği anlamına gelmez."
   },
   "NotFound": {
     "title": "Sayfa bulunamadı",

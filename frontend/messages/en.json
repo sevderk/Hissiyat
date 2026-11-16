@@ -1,7 +1,7 @@
 {
   "Metadata": {
     "title": "Hissiyat | Analysis dashboard",
-    "description": "A synthetic analysis demonstration for human experience and search interest."
+    "description": "An analysis dashboard for online human experience and search interest."
   },
   "Navigation": {
     "projectName": "Hissiyat",
@@ -13,9 +13,10 @@
   },
   "Dashboard": {
     "title": "Analysis dashboard",
-    "intro": "Explore online human experience and search interest in two separate data views.",
+    "intro": "Explore online human experience and search interest.",
+    "sectionNavigation": "Dashboard sections",
     "noticeTitle": "Synthetic demonstration",
-    "notice": "All values are fictional and cannot be used as research findings.",
+    "notice": "The charts in this section illustrate the interface with fictional text and search-interest data.",
     "methodology": "Method and provenance",
     "human": {
       "source": "Fictional text data · Inspired by the CareerNet pilot",
@@ -88,6 +89,68 @@
       "noCategories": "There are no categories in this group.",
       "retry": "Retry"
     }
+  },
+  "LocalAnalysis": {
+    "title": "Analyze texts",
+    "local": "Local text analysis",
+    "intro": "Explore topic groups in a small collection of English texts with TF-IDF + NMF or MiniLM + K-means.",
+    "examples": "Text collection",
+    "own": "Enter your own test texts",
+    "career": "Fictional · Education and careers",
+    "technology": "Fictional · Technology and digital services",
+    "method": "Analysis method",
+    "methods": {"nmf": "TF-IDF + NMF", "minilm": "MiniLM + K-means", "both": "Compare both methods"},
+    "clusters": "Number of topic groups",
+    "texts": "English texts",
+    "inputHelp": "Enter {min, number}–{max, number} texts, one per line, up to {chars, number} characters each. The application does not store the texts. Use fictional or appropriately de-identified test texts.",
+    "analyze": "Analyze",
+    "clear": "Clear",
+    "textTotal": "{count, plural, one {# text} other {# texts}}",
+    "loading": "Analyzing on this computer…",
+    "resultTitle": "Exploratory topic groups",
+    "resultSummary": "{count, number} texts, {k, number} requested topic groups.",
+    "nmfHelp": "NMF uses word patterns. The terms shown are recurring words with high weights in this topic.",
+    "minilmHelp": "K-means groups MiniLM text vectors. The terms shown are lexical descriptors computed afterward from the assigned texts.",
+    "agreementTitle": "Agreement between groupings",
+    "agreementValue": "Adjusted Rand index (ARI): {ari} across {count, number} texts assigned by both methods.",
+    "agreementUnavailable": "There are too few shared assignments or populated groups to report ARI.",
+    "agreementHelp": "ARI compares how the same texts are grouped, accounting for chance agreement. Topic accuracy requires independent thematic evaluation.",
+    "group": "Group {number, number}",
+    "keywords": "Tentative keywords",
+    "noKeywords": "No eligible recurring keywords.",
+    "unassigned": "{count, plural, one {# text could not be assigned.} other {# texts could not be assigned.}}",
+    "iterationLimit": "The model reached its iteration limit. Interpret this grouping with extra care.",
+    "limits": "Group numbers are arbitrary and sizes describe only the submitted texts. A keyword must be in the permitted vocabulary and recur in at least three distinct texts in its group. The topics require human interpretation. Emotion, needs, experience and clinical classification are outside this analysis.",
+    "errors": {
+      "textCount": "Enter between 12 and 100 nonblank lines.",
+      "tooLarge": "Keep each text to 500 characters and the total request under 64 KiB.",
+      "invalidInput": "The local service rejected the input. Check the text lines and group count.",
+      "insufficientVariation": "The texts contain too little distinct vocabulary for this group count. Try more varied texts or select two groups.",
+      "busy": "An analysis is already running. Try again in a moment.",
+      "modelUnavailable": "The verified local MiniLM model could not be loaded. Check the local model setup, or select TF-IDF + NMF.",
+      "unavailable": "Local analysis is unavailable. Check that the local API is running with analysis enabled."
+    }
+  },
+  "Research": {
+    "title": "Research Findings",
+    "preview": "Exploratory real-data pilot · Local preview",
+    "sample": "The first case study used {questions, number} reviewed English questions about careers.",
+    "comparison": "TF-IDF + NMF and MiniLM + K-means compared",
+    "measure": "Measure",
+    "clusterCount": "k = {k, number}",
+    "betweenMethods": "Between-method agreement (ARI)",
+    "nmfStability": "TF-IDF + NMF median stability",
+    "miniLmStability": "MiniLM + K-means median stability",
+    "scale": "Bars show the positive ARI values observed here on a 0–1 scale.",
+    "readingTitle": "How to read the comparison",
+    "ari": "The adjusted Rand index (ARI) compares how the same questions are grouped and accounts for agreement expected by chance. A value of 1 means identical groupings, and a value near 0 indicates chance-level agreement. Classification accuracy is outside the scope of this experiment.",
+    "stability": "Stability shows how similar the clusters were across {repetitions, number} subsampling repetitions, each using about {share} of the sample.",
+    "observed": "Both methods were more stable with two clusters (k = 2) in the main experiment. Thematic validity and method superiority require further evidence.",
+    "reviewTitle": "Human review and sample limitations",
+    "review": "A first reviewer assigned the labels. A second reviewer independently assessed {questions, number} purposefully selected questions. Agreement varied by category. This small overlap sample is insufficient to establish general inter-rater reliability.",
+    "limits": "This small, selected English-language career sample describes the pilot only. Population estimates, clinical anxiety detection and causal inference are outside its scope.",
+    "source": "Source <release>CareerNet v1.1 — Renaissance Philanthropy</release> · <license>CC BY 4.0</license>",
+    "attribution": "Hissiyat selected a sample from the dataset and compared methods. The analysis and interpretations belong to the Hissiyat project. Attribution implies no publisher endorsement."
   },
   "NotFound": {
     "title": "Page not found",

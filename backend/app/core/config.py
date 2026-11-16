@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Literal
 
 from pydantic import Field, SecretStr, field_validator
@@ -17,6 +18,8 @@ class Settings(BaseSettings):
 
     service_name: str = "Hissiyat API"
     environment: Literal["development", "test", "production"] = "development"
+    local_text_analysis: Literal["0", "1"] = "0"
+    local_analysis_model_dir: Path | None = Field(default=None, repr=False)
 
     database_host: str = "127.0.0.1"
     database_port: int = Field(default=55432, ge=1, le=65535)

@@ -12,6 +12,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "lint": "eslint .",
     "test:demo": "node --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test scripts/demo-contract.test.mjs",
+    "test:research": "node --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test scripts/research-preview.test.mjs",
     "test:routes": "node scripts/verify-routes.mjs"
   },
   "dependencies": {

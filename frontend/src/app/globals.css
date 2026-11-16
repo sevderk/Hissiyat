@@ -46,10 +46,26 @@ a:focus-visible {
   color: #4c5a53;
 }
 
-.demo-notice {
+.dashboard-section-nav {
   display: flex;
-  align-items: flex-start;
-  gap: .65rem;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-block: 1rem 1.5rem;
+}
+
+.dashboard-section-nav a {
+  padding: .46rem .75rem;
+  border: 1px solid #cfddd5;
+  border-radius: .5rem;
+  background: #fff;
+  color: #24564a;
+  font-size: .85rem;
+  font-weight: 700;
+}
+
+.dashboard-section-nav a:hover { background: #e8f1e9; }
+
+.demo-notice {
   margin-bottom: 1.75rem;
   padding: .8rem 1rem;
   border: 1px solid #e6d9ad;
@@ -59,8 +75,6 @@ a:focus-visible {
   font-size: .875rem;
   line-height: 1.55;
 }
-
-.demo-notice svg { flex: none; }
 
 .analysis-section + .analysis-section {
   margin-top: 3.25rem;
@@ -83,7 +97,7 @@ a:focus-visible {
   letter-spacing: .02em;
 }
 
-.analysis-heading h2 {
+.analysis-heading :is(h2, h3) {
   margin-top: .3rem;
   color: #17372f;
   font-size: clamp(1.55rem, 4vw, 2.25rem);
@@ -91,6 +105,60 @@ a:focus-visible {
   letter-spacing: -.045em;
   line-height: 1.16;
 }
+
+.synthetic-section .analysis-heading h3 { font-size: clamp(1.35rem, 3.5vw, 1.8rem); }
+
+.research-comparison table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  color: #30433a;
+  text-align: left;
+}
+
+.research-comparison caption {
+  margin-bottom: .65rem;
+  color: #1d3e34;
+  font-weight: 700;
+  text-align: left;
+}
+
+.research-comparison th,
+.research-comparison td { padding: .65rem .55rem; vertical-align: middle; }
+.research-comparison th:first-child { width: 48%; padding-left: 0; }
+.research-comparison thead th { color: #42554b; font-size: .85rem; }
+.research-comparison tbody tr { border-top: 1px solid #e4eae5; }
+.research-comparison tbody th { font-size: .9rem; font-weight: 600; overflow-wrap: anywhere; }
+.research-comparison td:last-child { padding-right: 0; }
+.research-value { display: block; margin-bottom: .35rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.research-comparison .bar-track { max-width: 15rem; }
+.research-comparison .betweenMethods { background: #586780; }
+.research-comparison .nmfStability { background: #347a65; }
+.research-comparison .miniLmStability { background: #365d9a; }
+.research-scale { margin-top: .75rem; color: #51605a; font-size: .8rem; }
+
+.research-notes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .85rem 1.8rem;
+  margin-top: 1rem;
+  color: #3c4d44;
+  font-size: .87rem;
+  line-height: 1.55;
+}
+
+.research-notes h3 { color: #1d3e34; font-size: .95rem; font-weight: 700; }
+.research-notes p { margin-top: .4rem; }
+.research-source {
+  margin-top: 1rem;
+  padding-top: .8rem;
+  border-top: 1px solid #e0e5de;
+  color: #42554b;
+  font-size: .82rem;
+  line-height: 1.55;
+}
+.research-source a { color: #24564a; text-decoration: underline; text-underline-offset: .2em; }
+.research-source p + p { margin-top: .28rem; }
 
 .section-description {
   margin-top: .45rem;
@@ -181,7 +249,46 @@ a:focus-visible {
   padding: 1.2rem 1.35rem;
 }
 
-.dashboard-card h3 { color: #1d3e34; font-size: 1rem; font-weight: 700; }
+.dashboard-card :is(h3, h4) { color: #1d3e34; font-size: 1rem; font-weight: 700; }
+.local-analysis-panel { max-width: 52rem; }
+.local-analysis-options { display: flex; flex-wrap: wrap; align-items: end; gap: .85rem; }
+.local-analysis-options label { display: grid; gap: .3rem; min-width: 0; }
+.local-analysis-panel label { color: #30433a; font-size: .86rem; font-weight: 700; }
+.local-analysis-input { display: block; margin-top: 1rem; }
+.local-analysis-input + p { margin-top: .25rem; }
+.local-analysis-panel :is(select, textarea) {
+  border: 1px solid #b7c9be;
+  border-radius: .42rem;
+  padding: .52rem .65rem;
+  background: #fcfdfb;
+  color: #253e35;
+  font-size: .92rem;
+}
+.local-analysis-panel select { max-width: 100%; }
+.local-analysis-panel textarea { width: 100%; margin-top: .45rem; resize: vertical; }
+.local-analysis-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .65rem; margin-top: .7rem; }
+.local-analysis-actions .dashboard-muted { margin-top: 0; }
+.local-analysis-actions button {
+  padding: .5rem .75rem;
+  border: 1px solid #164f43;
+  border-radius: .4rem;
+  background: #164f43;
+  color: #fff;
+  font-size: .87rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.local-analysis-actions button + button { background: #fff; color: #24564a; border-color: #b7c9be; }
+.local-analysis-actions button:disabled { cursor: default; opacity: .55; }
+.local-analysis-panel :is(button, select, textarea):focus-visible { outline: 3px solid #0f766e; outline-offset: 2px; }
+.local-analysis-error { margin-top: .75rem; color: #8d301f; font-size: .87rem; }
+.local-analysis-results { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #dfe3dc; }
+.local-analysis-agreement { margin-top: .75rem; padding: .75rem 1rem; border-radius: .55rem; background: #edf3ee; }
+.local-analysis-agreement p { margin-top: .3rem; color: #3c4d44; font-size: .86rem; }
+.local-method-result { min-width: 0; margin-top: 1rem; }
+.local-method-comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.local-method-comparison .local-method-result { padding: .8rem; border: 1px solid #dfe3dc; border-radius: .55rem; }
+.local-analysis-results .distribution-list { max-width: 34rem; }
 .distribution-list { display: grid; gap: .7rem; margin-top: .85rem; }
 
 .bar-label {
@@ -221,7 +328,7 @@ a:focus-visible {
 .trend-meta div { min-width: 0; }
 .trend-meta span { display: block; margin-bottom: .23rem; color: #52605b; font-size: .76rem; }
 .trend-meta strong { display: block; color: #293d35; font-size: .84rem; }
-.trend-meta h3 { overflow-wrap: anywhere; }
+.trend-meta h4 { overflow-wrap: anywhere; }
 
 .trend-figure figcaption {
   display: flex;
@@ -286,8 +393,13 @@ a:focus-visible {
   .dashboard-shell { padding: 1.15rem 1rem 3rem; }
   .demo-notice { margin-bottom: 1.5rem; }
   .distribution-grid { grid-template-columns: 1fr; }
+  .research-notes { grid-template-columns: 1fr; }
+  .research-comparison th,
+  .research-comparison td { padding-inline: .35rem; }
+  .research-comparison tbody th { font-size: .81rem; }
   .dashboard-card { padding: 1rem; }
   .cohort-summary { grid-template-columns: 1fr; gap: .65rem; padding: 1rem; }
+  .local-method-comparison { grid-template-columns: 1fr; gap: 0; }
   .cohort-note { border-top: 1px solid #c4d9ca; border-left: 0; padding: .65rem 0 0; }
   .cohort-options span { padding-inline: .5rem; }
   .analysis-section + .analysis-section { margin-top: 2.3rem; padding-top: 1.75rem; }

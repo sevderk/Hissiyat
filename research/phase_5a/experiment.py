@@ -194,7 +194,7 @@ def _model_integrity(directory):
 
 def _reproducibility():
     paths = (Path(__file__), Path(methods.__file__), Path(sampling.__file__), Path(prepare.__file__),
-             Path(review.__file__))
+             Path(review.__file__), Path(methods.topic_model.__file__), Path(methods.minilm.__file__))
     packages = {distribution.metadata["Name"]: distribution.version for distribution in distributions()}
     return {
         "source_sha256": prepare.REFERENCE["publisher_sha256"], "source_size": prepare.SIZE,

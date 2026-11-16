@@ -5,7 +5,7 @@ from collections import Counter, defaultdict
 import ctypes
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from hashlib import file_digest, sha1, sha256
+from hashlib import file_digest, sha256
 from importlib.metadata import version
 import json
 import os
@@ -17,6 +17,8 @@ import sys
 from time import perf_counter
 import warnings
 
+from backend.app.core import minilm, topic_model
+
 from .corpus import MAX_WORKBOOK_BYTES, THRESHOLDS, CorpusError, prepare, read_workbook
 
 
@@ -27,15 +29,15 @@ PRIVACY_REVIEW_DECISION = "reviewed_for_local_analysis"
 MAX_RECORD_BYTES = 64 * 1024
 WORKBOOK_COUNT = 10
 SHA256_HEX = re.compile(r"[0-9a-f]{64}")
-MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-MODEL_REVISION = "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"
-MODEL_SHA256 = "6fd5d72fe4589f189f8ebc006442dbb529bb7ce38f8082112682524616046452"
-TOKENIZER_BLOB = "cb202bfe2e3c98645018a6d12f182a434c9d3e02"
+MODEL = minilm.MODEL
+MODEL_REVISION = minilm.MODEL_REVISION
+MODEL_SHA256 = minilm.MODEL_SHA256
+TOKENIZER_BLOB = minilm.TOKENIZER_BLOB
 TOPIC_COUNTS = (2, 3)
-SEED = 42
-CPU_THREADS = 2
-BATCH_SIZE = 8
-MAX_TOKENS = 256
+SEED = topic_model.SEED
+CPU_THREADS = minilm.CPU_THREADS
+BATCH_SIZE = minilm.BATCH_SIZE
+MAX_TOKENS = minilm.MAX_TOKENS
 REPOSITORY = Path(__file__).resolve().parents[2]
 ISO_TIMESTAMP = re.compile(
     r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"
@@ -214,58 +216,14 @@ def _verified_corpus(inputs, provenance, *, review_record=None, trusted_review_s
 
 
 def _local_embeddings(texts, directory):
-    import numpy as np
-    import onnxruntime as ort
-    from tokenizers import Tokenizer
-
-    directory = _local_external(directory)
-    weights, tokenizer_path = directory / "model.onnx", directory / "tokenizer.json"
-    tokenizer_blob = tokenizer_path.read_bytes()
-    blob_hash = sha1(f"blob {len(tokenizer_blob)}\0".encode() + tokenizer_blob).hexdigest()
-    if _digest(weights) != MODEL_SHA256 or blob_hash != TOKENIZER_BLOB:
-        raise CorpusError("model_integrity_mismatch")
-    tokenizer = Tokenizer.from_file(str(tokenizer_path))
-    tokenizer.enable_truncation(max_length=MAX_TOKENS)
-    tokenizer.enable_padding(pad_id=tokenizer.token_to_id("[PAD]"), pad_token="[PAD]")
-    options = ort.SessionOptions()
-    options.intra_op_num_threads = CPU_THREADS
-    options.inter_op_num_threads = 1
-    options.log_severity_level = 4
-    session = ort.InferenceSession(str(weights), sess_options=options, providers=["CPUExecutionProvider"])
-    input_names = {item.name for item in session.get_inputs()}
-    if not {"input_ids", "attention_mask"} <= input_names <= {"input_ids", "attention_mask", "token_type_ids"}:
-        raise CorpusError("unexpected_model_inputs")
-    vectors = []
-    for offset in range(0, len(texts), BATCH_SIZE):
-        batch = tokenizer.encode_batch(texts[offset:offset + BATCH_SIZE])
-        fields = {
-            "input_ids": [item.ids for item in batch],
-            "attention_mask": [item.attention_mask for item in batch],
-            "token_type_ids": [item.type_ids for item in batch],
-        }
-        encoded = {key: np.asarray(fields[key], dtype=np.int64) for key in input_names}
-        hidden = session.run(None, encoded)[0]
-        if hidden.ndim != 3 or hidden.shape[-1] != 384:
-            raise CorpusError("unexpected_model_output")
-        mask = encoded["attention_mask"][..., None]
-        pooled = (hidden * mask).sum(axis=1) / mask.sum(axis=1).clip(min=1)
-        vectors.append(pooled / np.linalg.norm(pooled, axis=1, keepdims=True).clip(min=1e-12))
-    return np.concatenate(vectors).astype(np.float32)
+    try:
+        return minilm.MiniLMEncoder(_local_external(directory)).encode(texts)
+    except minilm.ModelUnavailable as error:
+        raise CorpusError(str(error)) from None
 
 
 def _tfidf(rows):
-    from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS, TfidfVectorizer
-
-    negations = {
-        "cannot", "neither", "never", "no", "nobody", "none", "noone",
-        "nor", "not", "nothing", "nowhere", "without",
-    }
-    stop_words = sorted(ENGLISH_STOP_WORDS - negations)
-    vectorizer = TfidfVectorizer(
-        token_pattern=r"(?u)\b[^\W\d_]+(?:'[^\W\d_]+)?\b", stop_words=stop_words,
-    )
-    matrix = vectorizer.fit_transform(row.text for row in rows)
-    return matrix, vectorizer.get_feature_names_out()
+    return topic_model.fit_tfidf(row.text for row in rows)
 
 
 def _public_terms(rows, labels, vocabulary, weights, topic_count):
@@ -290,8 +248,6 @@ def _public_terms(rows, labels, vocabulary, weights, topic_count):
 
 def _fit(rows, topic_count, embeddings=None, include_terms=False):
     import numpy as np
-    from sklearn.cluster import KMeans
-    from sklearn.decomposition import NMF
 
     if len(rows) < topic_count * 3 or len({row.group for row in rows}) < 3:
         return None
@@ -307,15 +263,10 @@ def _fit(rows, topic_count, embeddings=None, include_terms=False):
         if embeddings is None:
             if min(matrix.shape) < topic_count:
                 return None
-            nmf = NMF(n_components=topic_count, init="nndsvda", random_state=SEED, max_iter=500)
-            scores = nmf.fit_transform(matrix)
-            labels = scores.argmax(axis=1)
-            zero_rows = np.isclose(scores.sum(axis=1), 0)
-            labels[zero_rows] = -1
-            weights = nmf.components_
+            labels, weights, _ = topic_model.fit_nmf(matrix, topic_count)
+            zero_rows = labels == -1
         else:
-            model = KMeans(n_clusters=topic_count, random_state=SEED, n_init=20)
-            labels = model.fit_predict(embeddings)
+            labels, _ = topic_model.fit_kmeans(embeddings, topic_count)
             zero_rows = np.zeros(len(rows), dtype=bool)
             if matrix is not None:
                 weights = np.asarray([
@@ -328,12 +279,7 @@ def _fit(rows, topic_count, embeddings=None, include_terms=False):
 
 
 def _ari(reference, candidate):
-    from sklearn.metrics import adjusted_rand_score
-
-    valid = (reference >= 0) & (candidate >= 0)
-    if valid.sum() < 3 or len(set(reference[valid])) < 2 or len(set(candidate[valid])) < 2:
-        return None
-    return round(float(adjusted_rand_score(reference[valid], candidate[valid])), 4)
+    return topic_model.grouping_agreement(reference, candidate)["ari"]
 
 
 def _describe(values):
@@ -448,7 +394,11 @@ def run(inputs, provenance, output, model_dir, source_revision, *, review_record
     )
     report = {
         "source_revision": source_revision,
-        "implementation_sha256": {name: _digest(Path(__file__).with_name(name)) for name in ("corpus.py", "experiment.py", "requirements.txt")},
+        "implementation_sha256": {
+            **{name: _digest(Path(__file__).with_name(name)) for name in ("corpus.py", "experiment.py", "requirements.txt")},
+            "backend/app/core/topic_model.py": _digest(Path(topic_model.__file__)),
+            "backend/app/core/minilm.py": _digest(Path(minilm.__file__)),
+        },
         "dataset": {"doi": DOI, "version": 1, "license": "CC BY 4.0", "downloaded_utc": downloaded},
         "settings": {"thresholds": THRESHOLDS, "topic_counts": TOPIC_COUNTS, "seed": SEED, "cpu_threads": CPU_THREADS},
         "preprocessing": "screened_responses_v3",

@@ -31,6 +31,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application.include_router(router)
     if configuration.environment in ("development", "test"):
         application.include_router(demo_router, prefix=router.prefix)
+    if configuration.environment == "development" and configuration.local_text_analysis == "1":
+        from app.api.v1.local_text_analysis import router as local_text_analysis_router
+
+        application.include_router(local_text_analysis_router, prefix=router.prefix)
     return application
 
 

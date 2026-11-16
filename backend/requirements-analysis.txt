@@ -1,0 +1,7 @@
+# Optional CPU-only dependencies for the local text explorer.
+numpy==2.2.6
+scipy==1.15.3
+scikit-learn==1.6.1
+joblib==1.6.0
+threadpoolctl==3.8.0
+cloudpickle==3.1.2
