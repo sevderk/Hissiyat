@@ -2,6 +2,7 @@
 
 import {useEffect, useState} from 'react';
 import {useFormatter, useTranslations} from 'next-intl';
+import {TrendPlot} from '@/components/trend-plot';
 import {categories, cohorts, isSearchInterest, isTextAnalysis} from '@/lib/demo-contract';
 import type {Cohort, Group, InterestPoint, SearchInterest, TextAnalysis} from '@/lib/demo-contract';
 
@@ -156,13 +157,7 @@ function InterestChart({points}: {points: InterestPoint[]}) {
   const format = useFormatter();
   const date = (value: string, short = false) => format.dateTime(new Date(value + 'T00:00:00Z'),
     {month: 'short', day: 'numeric', year: short ? undefined : 'numeric', timeZone: 'UTC'});
-  const x = (index: number) => 20 + (points.length > 1 ? index * 760 / (points.length - 1) : 380);
-  const y = (value: number) => 200 - value * 2;
   const observed = points.filter((point) => point.status === 'observed').length;
-  const path = points.map(({value}, index) => {
-    if (value === null) return '';
-    return (index > 0 && points[index - 1].value !== null ? 'L' : 'M') + x(index) + ' ' + y(value);
-  }).join(' ');
   return (
     <div className="dashboard-card trend-card" data-testid="trend-data">
       <div className="trend-meta">
@@ -177,28 +172,8 @@ function InterestChart({points}: {points: InterestPoint[]}) {
             <span>{t('search.scale')}</span>
             <span>{t('search.coverage', {observed, weeks: points.length})}</span>
           </figcaption>
-          <div className="trend-chart">
-            <div className="trend-y" aria-hidden="true">{[100, 75, 50, 25, 0].map((tick) => <span key={tick}>{tick}</span>)}</div>
-            <div className="trend-plot">
-              <svg role="img" aria-label={t('search.chartLabel')} viewBox="0 -7 800 214" preserveAspectRatio="none">
-                {[0, 25, 50, 75, 100].map((tick) => (
-                  <line key={tick} x1="0" x2="800" y1={y(tick)} y2={y(tick)} className="trend-grid-line" vectorEffect="non-scaling-stroke" />
-                ))}
-                {points.map(({date, status}, index) => status !== 'observed' && (
-                  <rect key={date} data-gap={status} x={x(index) - 12} y="0" width="24" height="200" className={'trend-gap ' + status} />
-                ))}
-                <path d={path} className="trend-line" vectorEffect="non-scaling-stroke" />
-                {points.map(({date, value}, index) => value !== null && (
-                  <circle key={date} cx={x(index)} cy={y(value)} r="4" className="trend-dot" vectorEffect="non-scaling-stroke" />
-                ))}
-              </svg>
-              <div className="trend-x" aria-hidden="true">
-                <span>{date(points[0].date, true)}</span>
-                {points.length > 2 && <span>{date(points[Math.floor(points.length / 2)].date, true)}</span>}
-                {points.length > 1 && <span>{date(points[points.length - 1].date, true)}</span>}
-              </div>
-            </div>
-          </div>
+          <TrendPlot points={points} ticks={[100, 75, 50, 25, 0]} chartLabel={t('search.chartLabel')}
+            formatDate={value => date(value, true)} formatValue={format.number} />
           <ul className="trend-legend">
             <li><i className="legend-observed" aria-hidden="true" />{t('search.observed')}</li>
             <li><i className="legend-missing" aria-hidden="true" />{t('search.missing')}</li>

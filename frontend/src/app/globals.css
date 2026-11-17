@@ -283,6 +283,8 @@ a:focus-visible {
 .local-analysis-panel :is(button, select, textarea):focus-visible { outline: 3px solid #0f766e; outline-offset: 2px; }
 .local-analysis-error { margin-top: .75rem; color: #8d301f; font-size: .87rem; }
 .local-analysis-results { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #dfe3dc; }
+.expression-groups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; }
+.expression-groups dd { font-weight: 700; font-variant-numeric: tabular-nums; }
 .local-analysis-agreement { margin-top: .75rem; padding: .75rem 1rem; border-radius: .55rem; background: #edf3ee; }
 .local-analysis-agreement p { margin-top: .3rem; color: #3c4d44; font-size: .86rem; }
 .local-method-result { min-width: 0; margin-top: 1rem; }
@@ -400,6 +402,7 @@ a:focus-visible {
   .dashboard-card { padding: 1rem; }
   .cohort-summary { grid-template-columns: 1fr; gap: .65rem; padding: 1rem; }
   .local-method-comparison { grid-template-columns: 1fr; gap: 0; }
+  .expression-groups { grid-template-columns: 1fr; }
   .cohort-note { border-top: 1px solid #c4d9ca; border-left: 0; padding: .65rem 0 0; }
   .cohort-options span { padding-inline: .5rem; }
   .analysis-section + .analysis-section { margin-top: 2.3rem; padding-top: 1.75rem; }

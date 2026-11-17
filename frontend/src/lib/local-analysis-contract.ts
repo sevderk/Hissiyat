@@ -4,9 +4,18 @@ type TopicGroup = {size: number; keywords: string[]};
 type MethodResult = {groups: TopicGroup[]; unassigned: number; iteration_limit: boolean};
 export const analysisMethods = ['nmf', 'minilm'] as const;
 export type AnalysisMethod = typeof analysisMethods[number] | 'both';
+export const expressionCategories = {
+  emotions: ['worry', 'excitement', 'frustration', 'confidence', 'curiosity'],
+  needs: ['information', 'guidance', 'support'],
+  experiences: ['reported']
+} as const;
+type ExpressionSignals = {submitted_texts: number} & {
+  [Group in keyof typeof expressionCategories]: Record<typeof expressionCategories[Group][number], number>;
+};
 export type LocalAnalysisResult = {
   methods: Partial<Record<typeof analysisMethods[number], MethodResult>>;
   agreement: {ari: number | null; common_assigned: number} | null;
+  expression_signals?: ExpressionSignals;
 };
 
 export function isLocalAnalysisEnabled(environment: string | undefined, setting: string | undefined) {
@@ -18,7 +27,7 @@ export function parseTextarea(input: string) {
 }
 
 export function makeAnalysisBody(texts: string[], k: 2 | 3, method: AnalysisMethod) {
-  const body = JSON.stringify({texts, k, method});
+  const body = JSON.stringify({texts, k, method, include_signals: true});
   const {minTexts, maxTexts, maxChars, maxBytes} = analysisLimits;
   if (texts.length < minTexts || texts.length > maxTexts) return {error: 'textCount'} as const;
   if (texts.some(text => [...text].length > maxChars) || new TextEncoder().encode(body).length > maxBytes) {
@@ -27,9 +36,22 @@ export function makeAnalysisBody(texts: string[], k: 2 | 3, method: AnalysisMeth
   return {body} as const;
 }
 
-function hasKeys(value: unknown, keys: string[]): value is Record<string, unknown> {
+function hasKeys(value: unknown, keys: readonly string[]): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value) &&
     Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
+}
+
+function isExpressionSignals(value: unknown, total: number): value is ExpressionSignals {
+  if (!hasKeys(value, ['submitted_texts', ...Object.keys(expressionCategories)]) || value.submitted_texts !== total) {
+    return false;
+  }
+  return Object.entries(expressionCategories).every(([group, labels]) => {
+    const counts = value[group];
+    return hasKeys(counts, labels) && labels.every(label => {
+      const count = counts[label];
+      return isCount(count) && count <= total;
+    });
+  });
 }
 
 function isCount(value: unknown): value is number {
@@ -58,13 +80,19 @@ export function resultTextCount(result: MethodResult) {
 }
 
 export function isLocalAnalysisResult(value: unknown, expectedCount?: number, expectedK?: number, expectedMethod?: AnalysisMethod): value is LocalAnalysisResult {
-  if (!hasKeys(value, ['methods', 'agreement']) || !value.methods || typeof value.methods !== 'object') return false;
+  const withSignals = typeof value === 'object' && value !== null && Object.hasOwn(value, 'expression_signals');
+  const keys = withSignals ? ['methods', 'agreement', 'expression_signals'] : ['methods', 'agreement'];
+  if (!hasKeys(value, keys) || !value.methods || typeof value.methods !== 'object') return false;
   const methods = Object.keys(value.methods);
   if (!methods.length || !methods.every(method => method === 'nmf' || method === 'minilm')) return false;
   if (expectedMethod === 'both' ? methods.length !== 2 : expectedMethod && (methods.length !== 1 || methods[0] !== expectedMethod)) return false;
   const {nmf, minilm} = value.methods as Record<string, unknown>;
-  if (methods.includes('nmf') && !isMethodResult(nmf, expectedCount, expectedK)) return false;
-  if (methods.includes('minilm') && (!isMethodResult(minilm, expectedCount, expectedK) || minilm.unassigned !== 0)) return false;
+  const validNmf = isMethodResult(nmf, expectedCount, expectedK);
+  const validMiniLM = isMethodResult(minilm, expectedCount, expectedK);
+  if (methods.includes('nmf') && !validNmf) return false;
+  if (methods.includes('minilm') && (!validMiniLM || minilm.unassigned !== 0)) return false;
+  if (withSignals && !isExpressionSignals(value.expression_signals,
+    validNmf ? resultTextCount(nmf) : validMiniLM ? resultTextCount(minilm) : 0)) return false;
   if (methods.length === 1) return value.agreement === null;
   if (!isMethodResult(nmf) || !isMethodResult(minilm) || nmf.groups.length !== minilm.groups.length ||
       resultTextCount(nmf) !== resultTextCount(minilm)) return false;

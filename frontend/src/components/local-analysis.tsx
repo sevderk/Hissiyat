@@ -3,7 +3,7 @@
 import {useFormatter, useTranslations} from 'next-intl';
 import {type FormEvent, useState} from 'react';
 import examples from '@/lib/local-analysis-examples.json';
-import {analysisLimits, analysisMethods, type AnalysisMethod, isLocalAnalysisResult, type LocalAnalysisResult,
+import {analysisLimits, analysisMethods, type AnalysisMethod, expressionCategories, isLocalAnalysisResult, type LocalAnalysisResult,
   makeAnalysisBody, parseTextarea, resultTextCount} from '@/lib/local-analysis-contract';
 
 type Example = keyof typeof examples;
@@ -12,6 +12,32 @@ type ErrorKey = 'textCount' | 'tooLarge' | 'invalidInput' | 'insufficientVariati
 const requestErrors: Partial<Record<number, ErrorKey>> = {
   400: 'invalidInput', 413: 'tooLarge', 422: 'insufficientVariation', 429: 'busy'
 };
+
+function ExpressionSignals({signals}: {signals: NonNullable<LocalAnalysisResult['expression_signals']>}) {
+  const t = useTranslations('LocalAnalysis.signals');
+  const format = useFormatter();
+  const counts = {...signals.emotions, ...signals.needs, ...signals.experiences};
+
+  return (
+    <section className="local-analysis-results" aria-labelledby="expression-signals-heading">
+      <h3 id="expression-signals-heading">{t('title')}</h3>
+      <p className="dashboard-muted">{t('denominator', {count: signals.submitted_texts})}</p>
+      <p className="dashboard-muted">{t('interpretation')}</p>
+      <div className="expression-groups">
+        {(['emotions', 'needs', 'experiences'] as const).map(group => (
+          <section key={group} aria-label={t(`groups.${group}`)}>
+            <h4>{t(`groups.${group}`)}</h4>
+            <dl className="distribution-list">
+              {expressionCategories[group].map(label => (
+                <div key={label} className="bar-label"><dt>{t(`labels.${label}`)}</dt><dd>{format.number(counts[label])}</dd></div>
+              ))}
+            </dl>
+          </section>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export function LocalAnalysis() {
   const t = useTranslations('LocalAnalysis');
@@ -58,7 +84,7 @@ export function LocalAnalysis() {
         return;
       }
       const payload: unknown = await response.json();
-      if (isLocalAnalysisResult(payload, texts.length, k, method)) setResult(payload);
+      if (isLocalAnalysisResult(payload, texts.length, k, method) && payload.expression_signals) setResult(payload);
       else setError('unavailable');
     } catch {
       setError('unavailable');
@@ -171,6 +197,7 @@ export function LocalAnalysis() {
             </div>
           </section>
         )}
+        {result?.expression_signals && <ExpressionSignals signals={result.expression_signals} />}
       </div>
       <p className="method-note">{t('limits')}</p>
     </section>

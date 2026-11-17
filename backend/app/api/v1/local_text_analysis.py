@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints, Validation
 from starlette.concurrency import run_in_threadpool
 from starlette.requests import ClientDisconnect
 
+from app.core.expression_signals import aggregate_expression_signals
 from app.core.local_text_analysis import (
     MAX_BODY_BYTES, MAX_TEXT_CHARS, MAX_TEXTS, MIN_TEXTS, InsufficientVariation, analyze_texts,
 )
@@ -24,6 +25,7 @@ class AnalysisInput(BaseModel):
     texts: list[Text] = Field(min_length=MIN_TEXTS, max_length=MAX_TEXTS, repr=False)
     k: int = Field(ge=2, le=3)
     method: Literal["nmf", "minilm", "both"] | None = None
+    include_signals: bool = False
 
 
 def reply(status: int, payload: dict) -> JSONResponse:
@@ -61,7 +63,9 @@ async def local_text_analysis(request: Request):
             analyze_texts, submission.texts, submission.k, submission.method or "nmf",
             request.app.state.settings.local_analysis_model_dir,
         )
-        if submission.method is None:
+        if submission.include_signals:
+            result["expression_signals"] = aggregate_expression_signals(submission.texts)
+        elif submission.method is None:
             result = result["methods"]["nmf"]  # Keep the original NMF-only API shape for existing callers.
         return reply(200, result)
     except (ValidationError, ClientDisconnect, TimeoutError):

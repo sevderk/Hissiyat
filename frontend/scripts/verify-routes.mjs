@@ -5,6 +5,7 @@ const baseUrl = process.env.FRONTEND_BASE_URL ?? 'http://127.0.0.1:3000';
 const expectResearchPreview = process.env.FRONTEND_EXPECT_RESEARCH_PREVIEW === '1';
 const expectLocalAnalysis = process.env.FRONTEND_EXPECT_LOCAL_ANALYSIS === '1';
 const expectMiniLM = process.env.FRONTEND_EXPECT_MINILM === '1';
+const expectTrendsFixture = process.env.FRONTEND_EXPECT_TRENDS_FIXTURE === '1';
 const locales = ['tr', 'en'];
 
 function messageKeys(value, prefix = '') {
@@ -47,6 +48,14 @@ for (const [index, locale] of locales.entries()) {
   assert.ok(!html.includes('MISSING_MESSAGE'), `${locale}: no missing translations`);
   const syntheticStart = html.indexOf('id="synthetic-demo"');
   assert.ok(syntheticStart > -1, `${locale}: labeled synthetic section`);
+  const trendsStart = html.indexOf('id="trends-research"');
+  if (expectTrendsFixture) {
+    assert.ok(trendsStart > -1 && trendsStart < syntheticStart);
+    assert.ok(html.includes('href="#trends-research"'));
+    assert.ok(html.slice(trendsStart, syntheticStart).includes(messages[index].TrendsResearch.title));
+  } else {
+    assert.equal(trendsStart, -1, `${locale}: research Trends preview stays off`);
+  }
   const researchStart = html.indexOf('id="research-findings"');
   const localStart = html.indexOf('id="local-text-analysis"');
   if (expectLocalAnalysis) {
@@ -99,6 +108,25 @@ for (const path of ['/api/research-findings', '/api/demo/research-findings', '/a
 console.log('PASS research preview visibility and separation, with no research or annotation API');
 console.log('PASS translation keys match and all messages are nonempty');
 
+const trendsUrl = baseUrl + '/api/trends-preview';
+assert.equal((await fetch(trendsUrl + '?term=apple')).status, 404);
+assert.equal((await fetch(trendsUrl, {headers: {'Sec-Fetch-Site': 'cross-site'}})).status, 404);
+const trendsResponse = await fetch(trendsUrl);
+assert.equal(trendsResponse.headers.get('Cache-Control'), 'no-store');
+assert.equal(trendsResponse.headers.get('Set-Cookie'), null);
+if (expectTrendsFixture) {
+  assert.equal(trendsResponse.status, 200);
+  const data = await trendsResponse.json();
+  assert.equal(data.source, 'fictional_fixture');
+  assert.equal(data.granularity, 'monthly');
+  assert.equal(data.geography, 'CA');
+  assert.deepEqual(data.points.map(point => point.value), [124.25, 0, null, null, 60.125]);
+  assert.deepEqual(data.points.map(point => point.status), ['observed', 'observed', 'missing', 'suppressed', 'observed']);
+  console.log('PASS fictional Trends dates, original values and separate gap statuses');
+} else {
+  assert.equal(trendsResponse.status, 404);
+}
+
 const analysisUrl = baseUrl + '/api/local-text-analysis';
 const headers = {'Content-Type': 'application/json', 'Origin': new URL(baseUrl).origin};
 assert.equal((await fetch(analysisUrl)).status, 404);
@@ -119,7 +147,7 @@ if (expectLocalAnalysis) {
 
   const examples = JSON.parse(await readFile(new URL('../src/lib/local-analysis-examples.json', import.meta.url), 'utf8'));
   async function run(texts, k, method, expected = 200) {
-    const response = await fetch(analysisUrl, {method: 'POST', headers, body: JSON.stringify({texts, k, method})});
+    const response = await fetch(analysisUrl, {method: 'POST', headers, body: JSON.stringify({texts, k, method, include_signals: true})});
     assert.equal(response.status, expected, `${method} k=${k}`);
     assert.equal(response.headers.get('cache-control'), 'no-store');
     assert.equal(response.headers.get('set-cookie'), null);
@@ -138,6 +166,8 @@ if (expectLocalAnalysis) {
         result = await run(texts, k, 'both');
         assert.deepEqual(result, await run(texts, k, 'both'));
         assert.deepEqual(result.methods, {...nmf.methods, ...minilm.methods});
+        assert.deepEqual(result.expression_signals, nmf.expression_signals);
+        assert.deepEqual(result.expression_signals, minilm.expression_signals);
         assert.equal(result.agreement.common_assigned, texts.length);
         assert.ok(typeof result.agreement.ari === 'number' && Math.abs(result.agreement.ari) <= 1);
       }
@@ -145,11 +175,31 @@ if (expectLocalAnalysis) {
         assert.equal(method.groups.length, k);
         assert.equal(method.groups.reduce((total, {size}) => total + size, method.unassigned), texts.length);
       }
+      assert.equal(result.expression_signals.submitted_texts, texts.length);
       console.log(`PASS local analysis ${name} k=${k}: ${JSON.stringify(result)}`);
     }
   }
+  const challenge = JSON.parse(await readFile(new URL('../../backend/tests/fixtures/expression_signals.json', import.meta.url), 'utf8'));
+  const texts = challenge.map(row => row.text);
+  const labelsByGroup = {
+    emotions: ['worry', 'excitement', 'frustration', 'confidence', 'curiosity'],
+    needs: ['information', 'guidance', 'support'],
+    experiences: ['reported']
+  };
+  const expected = {submitted_texts: texts.length, emotions: {}, needs: {}, experiences: {}};
+  for (const [group, labels] of Object.entries(labelsByGroup)) {
+    for (const label of labels) {
+      expected[group][label] = challenge.filter(row => row.labels.includes(label)).length;
+    }
+  }
+  const challengeResult = await run(texts, 2, 'nmf');
+  assert.deepEqual(challengeResult.expression_signals, expected);
+  const modified = await run(['I am not worried about the delay.', ...texts.slice(1)], 2, 'nmf');
+  assert.deepEqual(modified.expression_signals, {...expected, emotions: {...expected.emotions, worry: 0}});
+  console.log(`PASS fictional expression challenge and negation change: ${JSON.stringify(expected)}`);
   if (!expectMiniLM) assert.deepEqual(await run(examples.career, 2, 'minilm', 503), {code: 'model_unavailable'});
 } else {
   assert.equal(await status('{}'), 404);
+  assert.equal(await status('{"texts":["I am worried."],"k":2,"include_signals":true}'), 404);
   console.log('PASS local analysis API is disabled');
 }

@@ -9,7 +9,7 @@ from app.core.config import Settings
 from app.core.database import Database
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(settings: Settings | None = None, *, trends_preview: dict | None = None) -> FastAPI:
     configuration = settings if settings is not None else Settings()
 
     @asynccontextmanager
@@ -35,6 +35,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         from app.api.v1.local_text_analysis import router as local_text_analysis_router
 
         application.include_router(local_text_analysis_router, prefix=router.prefix)
+    if configuration.environment == "development" and trends_preview is not None:
+        from app.api.v1.trends_preview import router as trends_preview_router
+
+        application.state.trends_preview = trends_preview
+        application.include_router(trends_preview_router, prefix=router.prefix)
     return application
 
 

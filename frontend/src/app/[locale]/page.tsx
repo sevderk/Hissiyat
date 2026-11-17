@@ -4,9 +4,11 @@ import {notFound} from 'next/navigation';
 import {AnalysisDashboard} from '@/components/analysis-dashboard';
 import {LocalAnalysis} from '@/components/local-analysis';
 import {ResearchFindings} from '@/components/research-findings';
+import {TrendsResearchPreview} from '@/components/trends-research-preview';
 import {routing} from '@/i18n/routing';
 import {isLocalAnalysisEnabled} from '@/lib/local-analysis-contract';
 import {isResearchPreviewEnabled} from '@/lib/research-preview';
+import {isTrendsPreviewEnabled} from '@/lib/trends-research';
 
 export default async function HomePage({params}: {params: Promise<{locale: string}>}) {
   const {locale} = await params;
@@ -17,6 +19,8 @@ export default async function HomePage({params}: {params: Promise<{locale: strin
   const researchTitle = showResearch ? (await getTranslations('Research'))('title') : null;
   const showLocalAnalysis = isLocalAnalysisEnabled(process.env.NODE_ENV, process.env.HISSIYAT_LOCAL_TEXT_ANALYSIS);
   const analysisMessages = showLocalAnalysis ? (await getMessages()).LocalAnalysis : null;
+  const showTrends = isTrendsPreviewEnabled(process.env.NODE_ENV, process.env.HISSIYAT_TRENDS_PREVIEW);
+  const trendsMessages = showTrends ? (await getMessages()).TrendsResearch : null;
 
   return (
     <main id="main-content" tabIndex={-1} className="dashboard-shell">
@@ -24,10 +28,11 @@ export default async function HomePage({params}: {params: Promise<{locale: strin
         <h1>{t('title')}</h1>
         <p>{t('intro')}</p>
       </div>
-      {(showResearch || analysisMessages) && (
+      {(showResearch || analysisMessages || trendsMessages) && (
         <nav className="dashboard-section-nav" aria-label={t('sectionNavigation')}>
           {analysisMessages && <a href="#local-text-analysis">{analysisMessages.title}</a>}
           {showResearch && <a href="#research-findings">{researchTitle}</a>}
+          {trendsMessages && <a href="#trends-research">{trendsMessages.title}</a>}
           <a href="#synthetic-demo">{t('noticeTitle')}</a>
         </nav>
       )}
@@ -37,6 +42,11 @@ export default async function HomePage({params}: {params: Promise<{locale: strin
         </NextIntlClientProvider>
       )}
       {showResearch && <ResearchFindings />}
+      {trendsMessages && (
+        <NextIntlClientProvider messages={{TrendsResearch: trendsMessages}}>
+          <TrendsResearchPreview />
+        </NextIntlClientProvider>
+      )}
       <section id="synthetic-demo" className="analysis-section synthetic-section" aria-labelledby="synthetic-heading">
         <div className="analysis-heading">
           <h2 id="synthetic-heading">{t('noticeTitle')}</h2>

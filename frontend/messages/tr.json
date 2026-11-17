@@ -120,7 +120,14 @@
     "noKeywords": "Gösterim koşullarını karşılayan sözcük yok.",
     "unassigned": "{count, number} metin bir gruba atanamadı.",
     "iterationLimit": "Model yineleme sınırına ulaştı. Bu gruplamayı yorumlarken dikkatli olun.",
-    "limits": "Grup numaraları keyfîdir. Boyutlar yalnızca girilen metinleri betimler. Bir anahtar sözcük, izinli söz dağarcığında bulunmalı ve kendi grubunda en az üç farklı metinde görülmelidir. Konular insan değerlendirmesi gerektirir. Duygu, ihtiyaç, deneyim ve klinik sınıflandırma bu analizin kapsamı dışındadır.",
+    "limits": "Grup numaraları keyfîdir. Boyutlar yalnızca girilen metinleri betimler. Bir anahtar sözcük, izinli söz dağarcığında bulunmalı ve kendi grubunda en az üç farklı metinde görülmelidir. Konular insan değerlendirmesi gerektirir.",
+    "signals": {
+      "title": "İfade edilen duygu, ihtiyaç ve deneyim sinyalleri",
+      "denominator": "Gönderilen {count, number} metnin tamamı üzerinden hesaplandı.",
+      "interpretation": "Keşif amaçlı İngilizce ifade kuralları her metni kategori başına en fazla bir kez sayar. Bir metin birden fazla kategoriye girebilir. Eşleşme bulunmayan bir metin de duygu, ihtiyaç veya deneyim içerebilir. Sayılar eşleşen ifadeleri betimler. Doğrulanmış tahmin veya klinik değerlendirme sunmaz.",
+      "groups": {"emotions": "Kişinin ifade ettiği duygular", "needs": "İfade edilen ihtiyaç veya talepler", "experiences": "Birinci tekil şahıs deneyimleri"},
+      "labels": {"worry": "Endişe", "excitement": "Heyecan", "frustration": "Hayal kırıklığı veya bıkkınlık", "confidence": "Kendine güven", "curiosity": "Merak", "information": "Bilgi", "guidance": "Yönlendirme veya tavsiye", "support": "Yardım veya destek", "reported": "Aktarılan olay veya durum"}
+    },
     "errors": {
       "textCount": "Boş olmayan 12 ile 100 arasında satır girin.",
       "tooLarge": "Her metni en fazla 500 karakter, toplam isteği en fazla 64 KiB ile sınırlayın.",
@@ -130,6 +137,21 @@
       "modelUnavailable": "Doğrulanmış yerel MiniLM modeli yüklenemedi. Yerel model kurulumunu kontrol edin veya TF-IDF + NMF’yi seçin.",
       "unavailable": "Yerel analize ulaşılamıyor. Yerel API’nin analiz etkin olarak çalıştığını kontrol edin."
     }
+  },
+  "TrendsResearch": {
+    "title": "Google Trends Research API",
+    "source": "Google Trends Research API · Onaylı yerel seri",
+    "fictional": "Kurgusal bağdaştırıcı testi · API verisi kullanılmadı",
+    "loading": "Yerel önizleme okunuyor…",
+    "withheld": "Doğrulanmış yerel seri yok. Pano Google’a sorgu göndermedi.",
+    "term": "Arama terimi", "geography": "Coğrafi kapsam", "worldwide": "Dünya geneli",
+    "period": "Toplulaştırma", "range": "İlk ve son dönem başlangıcı",
+    "daily": "Günlük", "weekly": "Haftalık", "monthly": "Aylık", "yearly": "Yıllık",
+    "scale": "API’nin özgün biriminde arama ilgisi", "fixtureScale": "Test biriminde kurgusal değerler",
+    "chartLabel": "Eksik ve bastırılmış değerlerde boşluk içeren arama ilgisi zaman serisi",
+    "observed": "Gözlenen", "missing": "Eksik", "suppressed": "Bastırılmış", "values": "Dönem değerleri",
+    "limits": "Arama ilgisi göreli arama etkinliğini betimler. Mutlak arama sayısı vermez. Duyguyu, toplumun deneyimini veya nedensel ilişkileri ölçmez. Tek bir sorgu, arama davranışının dar bir bölümünü kapsar.",
+    "alignment": "Başka kaynaklarla karşılaştırma için coğrafya, dönem ve tanımlar uyumlu olmalıdır. Bu seri CareerNet metin sonuçlarından ayrı gösterilir."
   },
   "Research": {
     "title": "Araştırma Bulguları",

@@ -120,7 +120,14 @@
     "noKeywords": "No eligible recurring keywords.",
     "unassigned": "{count, plural, one {# text could not be assigned.} other {# texts could not be assigned.}}",
     "iterationLimit": "The model reached its iteration limit. Interpret this grouping with extra care.",
-    "limits": "Group numbers are arbitrary and sizes describe only the submitted texts. A keyword must be in the permitted vocabulary and recur in at least three distinct texts in its group. The topics require human interpretation. Emotion, needs, experience and clinical classification are outside this analysis.",
+    "limits": "Group numbers are arbitrary and sizes describe only the submitted texts. A keyword must be in the permitted vocabulary and recur in at least three distinct texts in its group. The topics require human interpretation.",
+    "signals": {
+      "title": "Expressed Emotion, Need and Experience Signals",
+      "denominator": "Based on all {count, number} submitted texts.",
+      "interpretation": "Exploratory English phrase rules count each text at most once per category. A text can count in several categories. An unmarked text may still contain an emotion, need or experience. These counts describe matched expressions and provide no validated predictions or clinical assessments.",
+      "groups": {"emotions": "Self-expressed emotions", "needs": "Expressed needs or requests", "experiences": "First-person experiences"},
+      "labels": {"worry": "Worry or concern", "excitement": "Excitement", "frustration": "Frustration", "confidence": "Confidence", "curiosity": "Curiosity", "information": "Information", "guidance": "Guidance or advice", "support": "Help or support", "reported": "Reported event or situation"}
+    },
     "errors": {
       "textCount": "Enter between 12 and 100 nonblank lines.",
       "tooLarge": "Keep each text to 500 characters and the total request under 64 KiB.",
@@ -130,6 +137,21 @@
       "modelUnavailable": "The verified local MiniLM model could not be loaded. Check the local model setup, or select TF-IDF + NMF.",
       "unavailable": "Local analysis is unavailable. Check that the local API is running with analysis enabled."
     }
+  },
+  "TrendsResearch": {
+    "title": "Google Trends Research API",
+    "source": "Google Trends Research API · Authorized local series",
+    "fictional": "Fictional adapter test · No Google API data",
+    "loading": "Reading the local preview…",
+    "withheld": "No verified local series is available. The dashboard has made no Google query.",
+    "term": "Search term", "geography": "Geographic scope", "worldwide": "Worldwide",
+    "period": "Aggregation", "range": "First and last period start",
+    "daily": "Daily", "weekly": "Weekly", "monthly": "Monthly", "yearly": "Yearly",
+    "scale": "Search interest in original API units", "fixtureScale": "Fictional values in fixture units",
+    "chartLabel": "Search-interest time series with gaps for missing and suppressed values",
+    "observed": "Observed", "missing": "Missing", "suppressed": "Suppressed", "values": "Period values",
+    "limits": "Search interest describes relative search activity. It provides no absolute search counts or direct measurement of emotion, population experience, or causation. A single query covers a narrow part of search behavior.",
+    "alignment": "Comparisons with other sources require aligned geography, time periods, and definitions. This series is displayed separately from the CareerNet text results."
   },
   "Research": {
     "title": "Research Findings",

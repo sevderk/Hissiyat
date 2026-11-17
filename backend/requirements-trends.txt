@@ -1,0 +1,4 @@
+# Optional dependencies matching the owner-operated Trends smoke client.
+google-api-python-client==2.202.0
+httplib2==0.32.1
+requests==2.34.2

@@ -1,0 +1,19 @@
+{
+  "fields": {
+    "geography": "fixture_region", "cadence": "fixture_aggregation", "date": "fixture_start",
+    "value": "fixture_value", "status": "fixture_status",
+    "statuses": {"ok": "observed", "absent": "missing", "hidden": "suppressed"}
+  },
+  "response": {
+    "lines": [{
+      "term": "career", "fixture_region": "CA", "fixture_aggregation": "monthly",
+      "points": [
+        {"fixture_start": "2025-01-01", "fixture_value": 124.25, "fixture_status": "ok"},
+        {"fixture_start": "2025-02-01", "fixture_value": 0, "fixture_status": "ok"},
+        {"fixture_start": "2025-03-01", "fixture_value": null, "fixture_status": "absent"},
+        {"fixture_start": "2025-04-01", "fixture_value": null, "fixture_status": "hidden"},
+        {"fixture_start": "2025-05-01", "fixture_value": 60.125, "fixture_status": "ok"}
+      ]
+    }]
+  }
+}

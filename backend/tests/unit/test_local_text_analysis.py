@@ -75,6 +75,7 @@ def test_empty_vocabulary_rows_are_reported_as_unassigned():
     {"k": 2, "texts": [42] * 12}, {"k": 2, "texts": [PRIVATE * 20] * 12},
     {"k": 2, "texts": EXAMPLES["career"], "unexpected": PRIVATE},
     {"k": 2, "texts": EXAMPLES["career"], "method": PRIVATE},
+    {"k": 2, "texts": EXAMPLES["career"], "include_signals": "true"},
 ])
 def test_invalid_inputs_return_only_a_safe_code(client, payload):
     response = client.post(PATH, json=payload)
@@ -105,8 +106,10 @@ def test_repeated_private_marker_is_not_disclosed_or_persisted(client, caplog, c
     analyze_texts(EXAMPLES["career"], 3)  # Load numerical libraries before auditing writes.
     monkeypatch.chdir(tmp_path)
     with patch("builtins.open", wraps=open_file) as opened:
-        response = client.post(PATH, json={"k": 3, "texts": [text + " " + PRIVATE for text in EXAMPLES["career"]]})
+        response = client.post(PATH, json={"k": 3, "include_signals": True,
+                                          "texts": [f"I am worried about {PRIVATE}. {text}" for text in EXAMPLES["career"]]})
     assert response.status_code == 200
+    assert response.json()["expression_signals"]["emotions"]["worry"] == len(EXAMPLES["career"])
     assert "private" not in response.text and "zzconfidentialmarker" not in response.text
     assert PRIVATE not in caplog.text and PRIVATE not in "".join(capsys.readouterr())
     assert list(tmp_path.iterdir()) == []
@@ -159,6 +162,7 @@ def test_concurrent_analysis_does_not_queue_another_fit(client):
 def test_api_is_absent_outside_enabled_development(environment, opted_in):
     with TestClient(create_app(settings(environment, opted_in)), base_url=BASE, client=PEER, headers=HEADERS) as client:
         assert client.post(PATH, json={}).status_code == 404
+        assert client.post(PATH, json={"k": 2, "texts": EXAMPLES["career"], "include_signals": True}).status_code == 404
         assert PATH not in client.get("/openapi.json").json()["paths"]
 
 
@@ -184,7 +188,7 @@ def test_method_modes_use_the_same_submission_and_are_deterministic(client, coll
     mock_vectors = np.eye(3, dtype=np.float32)[np.arange(len(texts)) % 3]
     with patch("app.core.local_text_analysis._encoder") as loader:
         loader.return_value.encode.return_value = mock_vectors
-        payload = {"texts": texts, "k": k}
+        payload = {"texts": texts, "k": k, "include_signals": True}
         nmf = client.post(PATH, json={**payload, "method": "nmf"}).json()
         loader.assert_not_called()
         minilm = client.post(PATH, json={**payload, "method": "minilm"}).json()
@@ -193,6 +197,8 @@ def test_method_modes_use_the_same_submission_and_are_deterministic(client, coll
         result = comparison.json()
         assert client.post(PATH, json={**payload, "method": "both"}).json() == result
         assert result["methods"] == {**nmf["methods"], **minilm["methods"]}
+        assert result["expression_signals"] == nmf["expression_signals"] == minilm["expression_signals"]
+        assert result["expression_signals"]["submitted_texts"] == len(texts)
         assert nmf["agreement"] is minilm["agreement"] is None
         assert result["agreement"]["common_assigned"] == len(texts)
         assert -1 <= result["agreement"]["ari"] <= 1

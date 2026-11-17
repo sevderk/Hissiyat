@@ -125,3 +125,30 @@ Run `npm.cmd run test:routes` with `FRONTEND_EXPECT_LOCAL_ANALYSIS=1` to
 exercise both examples through the proxy. Also set `FRONTEND_EXPECT_MINILM=1`
 when the verified model is configured. The backend unit tests cover
 validation, output disclosure and concurrency with the optional CPU packages.
+
+### Expressed emotion, need and experience signals
+
+The development-only browser requests `include_signals` with the regular
+analysis submission. The response adds only counts and the total submitted
+text count. Each category counts a text once, including when a phrase repeats.
+Categories can overlap. Counts are independent of the topic method and include
+texts that were unassigned by topic clustering. Requests omitting the option
+keep their existing response shape.
+
+The English rules adapt the direct-evidence principle in the
+[Phase 3D codebook](../research/phase_3d/README.md#future-relevance-codebook).
+They look for first-person state phrases for worry or concern, excitement,
+frustration, confidence and curiosity. Needs require explicit information,
+guidance or support phrases, such as “I need advice” or “Could you tell me…?”.
+Experience requires a first-person past event or activity with a supported
+verb, such as “I applied for a job”. A future intention alone is insufficient.
+
+Rules abstain on recognized quotes, earlier reporting cues and conditional or
+hypothetical contexts. Negated self-expressions, generic questions and implied
+needs do not match the positive templates. The rules can miss paraphrases,
+implicit experiences, coordination without a repeated subject and other
+languages. They can misread sarcasm, unmarked attribution or complex negation.
+The fictional challenge set checks behavior on selected cases. Prior human
+review does not validate these rules. The counts describe matched expressions
+only. They support neither clinical nor population-level conclusions. The app
+does not retain matched phrases, row-level flags or submitted texts.
