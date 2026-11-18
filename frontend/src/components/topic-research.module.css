@@ -93,6 +93,14 @@
 .interpretation { background: #f9fcf8; border-inline-start: 4px solid #46806c; margin-block: .9rem; }
 .interpretation p { margin-top: .42rem; line-height: 1.45; font-size: .91rem; }
 .interpretation a { color: #155648; text-decoration: underline; text-underline-offset: .17em; }
+.fields input[type="file"]::file-selector-button { margin-inline-end: .6rem; font-weight: 700; color: var(--deep); cursor: pointer; }
+.panel .field:has([type="range"]) { margin-block: .85rem .3rem; }
+.panel input[type="range"] { accent-color: #365d9a; padding: 0; }
+.trendsTable { width: 100%; border-collapse: collapse; margin-top: .8rem; font-size: .87rem; font-variant-numeric: tabular-nums; }
+.trendsTable caption { text-align: start; color: var(--muted); margin-bottom: .3rem; }
+.trendsTable :is(th, td) { padding: .4rem .45rem; border-bottom: 1px solid var(--line); text-align: start; }
+.trendsTable tr[data-selected] { background: var(--pale); }
+.trendsHash { overflow-wrap: anywhere; }
 
 @media (max-width: 760px) {
   .grid, .results .grid { grid-template-columns: minmax(0, 1fr); }

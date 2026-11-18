@@ -1,7 +1,8 @@
 import {analysisLimits, isExpressionSignals, isLocalAnalysisResult, type ExpressionSignals,
   type LocalAnalysisResult} from './local-analysis-contract.ts';
+import type {TrendsCountry} from './trends-research.ts';
 
-export const researchSources = ['fictional', 'civil_comments', 'wikimedia', 'lemmy', 'bluesky', 'google_trends'] as const;
+export const researchSources = ['google_trends', 'google_trends_csv', 'fictional', 'civil_comments', 'wikimedia', 'lemmy', 'bluesky'] as const;
 export const wikimediaTitle = 'Talk:USB flash drive';
 export const civilDates = {first: '2015-01-01', last: '2017-12-31'};
 const civilRows = 97320;
@@ -25,7 +26,7 @@ export type ResearchScope = {
   end_date: string;
   source: ResearchSource;
   language: 'en' | 'tr' | null;
-  geography: null;
+  geography: TrendsCountry | null;
   content?: 'posts' | 'comments' | 'mixed';
   analyze_discussion?: true;
 };
@@ -66,7 +67,8 @@ type DiscussionAnalysis = {
 export const researchErrors = {
   400: ['invalid_input'], 403: ['approval_required', 'forbidden', 'analysis_permission_unverified'], 404: ['not_found'], 413: ['too_large'],
   422: ['source_unavailable', 'discussion_missing'], 429: ['rate_limited', 'busy'],
-  502: ['provider_auth_required', 'provider_denied', 'provider_unavailable', 'invalid_response'], 504: ['provider_timeout'],
+  502: ['provider_auth_required', 'provider_denied', 'provider_unavailable', 'invalid_response', 'trends_contract_error'],
+  503: ['trends_not_configured'], 504: ['provider_timeout'],
 } as const satisfies Record<number, readonly string[]>;
 
 export type ResearchError = typeof researchErrors[keyof typeof researchErrors][number] | 'unavailable';

@@ -31,11 +31,18 @@ class DocumentedFields(BaseModel):
     statuses: dict[str, Literal["observed", "missing", "suppressed"]] = Field(min_length=1, max_length=3)
 
 
-def graph_line(payload):
+class SummaryContract(DocumentedFields):
+    """Operator-confirmed provider documentation and permission for local summaries."""
+
+    measurement: Literal["consistently_scaled_search_interest"]
+    display: Literal["local_summary"]
+
+
+def graph_line(payload, term=TERM):
     if not isinstance(payload, dict) or not isinstance(payload.get("lines"), list) or len(payload["lines"]) != 1:
         raise GraphError("unexpected_lines")
     line = payload["lines"][0]
-    if not isinstance(line, dict) or line.get("term") != TERM:
+    if not isinstance(line, dict) or line.get("term") != term:
         raise GraphError("unexpected_term")
     points = line.get("points")
     if not isinstance(points, list) or not 0 < len(points) <= MAX_POINTS or not all(isinstance(p, dict) for p in points):
@@ -60,8 +67,8 @@ def _next(previous, current, cadence):
     return current.year == previous.year + 1
 
 
-def adapt_graph(payload, fields: DocumentedFields, *, fictional=False):
-    line = graph_line(payload)
+def adapt_graph(payload, fields: DocumentedFields, *, fictional=False, term=TERM):
+    line = graph_line(payload, term)
     geography, cadence = line.get(fields.geography), line.get(fields.cadence)
     if not isinstance(geography, str) or not GEO.fullmatch(geography) or cadence not in CADENCES:
         raise GraphError("unknown_geography_or_cadence")
@@ -89,5 +96,31 @@ def adapt_graph(payload, fields: DocumentedFields, *, fictional=False):
         points.append({"date": day.isoformat(), "value": value, "status": status})
         previous = day
 
-    return {"source": "fictional_fixture" if fictional else "google_trends_research", "term": TERM,
+    return {"source": "fictional_fixture" if fictional else "google_trends_research", "term": term,
             "geography": geography, "granularity": cadence, "points": points}
+
+
+def summarize_graph(series, *, geography, start_month, end_month):
+    """Return derived findings only. Zero has ambiguous volume under the guide."""
+    points = series["points"]
+    first, last = points[0]["date"], points[-1]["date"]
+    if series["geography"] != geography or first[:7] < start_month or last[:7] > end_month:
+        raise GraphError("unverified_response_scope")
+    observed = [point for point in points if point["status"] == "observed" and point["value"] != 0]
+    if any(point["value"] < 0 for point in observed):
+        raise GraphError("invalid_observed_value")
+    peak = max((point["value"] for point in observed), default=None)
+    peak_periods = [point["date"] for point in observed if point["value"] == peak]
+    direction = "insufficient"
+    if len(observed) >= 2:
+        start, end = observed[0]["value"], observed[-1]["value"]
+        direction = "increased" if end > start else "decreased" if end < start else "unchanged"
+    return {
+        "geography": geography, "cadence": series["granularity"],
+        "first_period": first, "last_period": last, "nonzero": len(observed),
+        "ambiguous_zero": sum(point["status"] == "observed" and point["value"] == 0 for point in points),
+        "missing": sum(point["status"] == "missing" for point in points),
+        "suppressed": sum(point["status"] == "suppressed" for point in points),
+        "peak_period": peak_periods[0] if peak_periods else None, "peak_ties": len(peak_periods),
+        "direction": direction,
+    }

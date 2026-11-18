@@ -2,7 +2,11 @@
 
 import {useLocale, useTranslations} from 'next-intl';
 import {type FormEvent, useState} from 'react';
+import {TrendsCsvResults} from '@/components/trends-csv-results';
+import {TrendsOfficialResult} from '@/components/trends-official-result';
 import {expressionCategories} from '@/lib/local-analysis-contract';
+import {decodeTrendsCsv, importTrendsCsv, maxTrendsCsvBytes, readExploreLink, TrendsCsvError, type TrendsExport} from '@/lib/trends-csv';
+import {projectOfficialTrends, trendsCountries, type OfficialTrendsResult, type TrendsCountry} from '@/lib/trends-research';
 import {civilDates, civilDistribution, civilScreeningReasons, projectResearchResult, researchErrorFor, researchSources, researchUpstreamStatus,
   topicEvidence, wikimediaTitle, type ResearchError,
   type ResearchResult, type ResearchScope, type ResearchSource} from '@/lib/topic-research';
@@ -21,6 +25,11 @@ function recentScope(): ResearchScope {
   };
 }
 
+function previousMonth(monthsAgo: number) {
+  const today = new Date();
+  return new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - monthsAgo, 1)).toISOString().slice(0, 7);
+}
+
 export function TopicResearch({enabled}: {enabled: boolean}) {
   const t = useTranslations('TopicResearch');
   const locale = useLocale();
@@ -28,6 +37,15 @@ export function TopicResearch({enabled}: {enabled: boolean}) {
   const [result, setResult] = useState<ResearchResult | null>(null);
   const [error, setError] = useState<{code: ResearchError; upstream?: number | null} | null>(null);
   const [pending, setPending] = useState(false);
+  const [exploreLink, setExploreLink] = useState('');
+  const [trendsFile, setTrendsFile] = useState<File | null>(null);
+  const [sameChart, setSameChart] = useState(false);
+  const [trendsError, setTrendsError] = useState<TrendsCsvError['code'] | null>(null);
+  const [trendsResult, setTrendsResult] = useState<{data: TrendsExport; sha256: string} | null>(null);
+  const [officialResult, setOfficialResult] = useState<OfficialTrendsResult | null>(null);
+  const importingTrends = scope.source === 'google_trends_csv';
+  const queryingTrends = scope.source === 'google_trends';
+  const isTrends = importingTrends || queryingTrends;
 
   function chooseExample(mode: ResearchScope['mode']) {
     setScope({mode, source: 'fictional', query: t(mode === 'topic' ? 'exampleTopicQuery' : 'exampleEventQuery'),
@@ -49,13 +67,53 @@ export function TopicResearch({enabled}: {enabled: boolean}) {
         language: null, content: 'comments', analyze_discussion: true});
     } else if (source === 'civil_comments') {
       setScope({...scope, source, query: scope.source === 'wikimedia' ? '' : scope.query,
-        start_date: civilDates.first, end_date: civilDates.last, language: 'en', content: 'comments', analyze_discussion: true});
+        start_date: civilDates.first, end_date: civilDates.last, language: 'en', geography: null, content: 'comments', analyze_discussion: true});
+    } else if (source === 'google_trends') {
+      setScope({...scope, source, query: scope.source === 'wikimedia' ? '' : scope.query, geography: 'TR',
+        start_date: previousMonth(2) + '-01', end_date: previousMonth(1) + '-01',
+        language: null, content: undefined, analyze_discussion: undefined});
+    } else if (source === 'google_trends_csv') {
+      setScope({...scope, source, geography: null, language: null, content: undefined, analyze_discussion: undefined});
     } else {
-      setScope({...scope, ...(['wikimedia', 'civil_comments'].includes(scope.source) ? recentScope() : {}), source,
-        language: source === 'lemmy' ? null : scope.language, content: undefined, analyze_discussion: undefined});
+      setScope({...scope, ...(['wikimedia', 'civil_comments'].includes(scope.source) || isTrends ? recentScope() : {}), source,
+        geography: null, language: source === 'lemmy' ? null : scope.language, content: undefined, analyze_discussion: undefined});
     }
     setError(null);
-    setResult(null);
+    setTrendsError(null);
+    if (source !== 'google_trends' && source !== 'google_trends_csv' && !isTrends) setResult(null);
+  }
+
+  function applyExploreLink(link: string) {
+    setExploreLink(link);
+    setSameChart(false);
+    try {
+      const input = readExploreLink(link);
+      setScope(current => ({...current, query: input.term, start_date: input.start, end_date: input.end}));
+      setTrendsError(null);
+    } catch {
+      // Validate on submit so typing or pasting a partial link does not announce errors.
+    }
+  }
+
+  async function importInterest() {
+    setTrendsResult(null);
+    setTrendsError(null);
+    try {
+      if (window.location.hostname !== '127.0.0.1') throw new TrendsCsvError('link');
+      const input = readExploreLink(exploreLink);
+      if (input.term !== scope.query || input.start !== scope.start_date || input.end !== scope.end_date) {
+        throw new TrendsCsvError('scope');
+      }
+      if (!trendsFile || !/\.csv$/i.test(trendsFile.name)) throw new TrendsCsvError('file');
+      if (trendsFile.size > maxTrendsCsvBytes) throw new TrendsCsvError('size');
+      const buffer = await trendsFile.arrayBuffer().catch(() => { throw new TrendsCsvError('file'); });
+      const data = importTrendsCsv(decodeTrendsCsv(buffer), input);
+      const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', buffer));
+      const sha256 = Array.from(digest, value => value.toString(16).padStart(2, '0')).join('');
+      setTrendsResult({data, sha256});
+    } catch (failure) {
+      setTrendsError(failure instanceof TrendsCsvError ? failure.code : 'parser');
+    }
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -63,18 +121,29 @@ export function TopicResearch({enabled}: {enabled: boolean}) {
     if (!enabled || pending) return;
     setPending(true);
     setError(null);
-    setResult(null);
     try {
+      if (importingTrends) {
+        await importInterest();
+        return;
+      }
+      if (queryingTrends) setOfficialResult(null);
+      else setResult(null);
       const response = await fetch('/api/topic-research', {
         method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(scope),
-        cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(scope.source === 'civil_comments' ? 95000 : 20000),
+        cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(scope.source === 'civil_comments' || queryingTrends ? 95000 : 20000),
       });
       const data: unknown = await response.json();
       if (!response.ok) {
         const code = researchErrorFor(response.status, data);
         setError({code, upstream: researchUpstreamStatus(code, data)});
       }
-      else {
+      else if (queryingTrends) {
+        const checked = projectOfficialTrends(data);
+        if (checked && checked.mode === scope.mode && checked.term === scope.query.normalize('NFC').trim().replace(/\s+/g, ' ') &&
+            checked.requested_geography === scope.geography && checked.start_month === scope.start_date.slice(0, 7) &&
+            checked.end_month === scope.end_date.slice(0, 7)) setOfficialResult(checked);
+        else setError({code: 'unavailable'});
+      } else {
         const checked = projectResearchResult(data);
         if (checked) setResult(checked);
         else setError({code: 'unavailable'});
@@ -113,36 +182,65 @@ export function TopicResearch({enabled}: {enabled: boolean}) {
                 placeholder={t(scope.mode === 'topic' ? 'topicPlaceholder' : 'eventPlaceholder')}
                 onChange={event => setScope({...scope, query: event.target.value})} />
             </label>
-            <p className={styles.hint}>{t(scope.source === 'wikimedia' ? 'wikiScopeHelp' : scope.source === 'lemmy'
+            <p className={styles.hint}>{t(queryingTrends ? 'officialTrends.termHelp' : importingTrends ? 'importedTrends.linkScopeHelp' : scope.source === 'wikimedia' ? 'wikiScopeHelp' : scope.source === 'lemmy'
               ? 'lemmyQueryHelp' : historical ? 'civilScopeHelp' : scope.mode === 'topic' ? 'topicHelp' : 'eventHelp')}</p>
             <div className={styles.pair}>
-              <label className={styles.field}>{t('start')}
-                <input type="date" required min={historical ? civilDates.first : '2000-01-01'}
-                  max={historical ? civilDates.last : undefined} value={scope.start_date}
-                  onChange={event => setScope({...scope, start_date: event.target.value})} />
+              <label className={styles.field}>{t(queryingTrends ? 'officialTrends.start' : 'start')}
+                <input key={queryingTrends ? 'start-month' : 'start-date'} type={queryingTrends ? 'month' : 'date'} required
+                  min={queryingTrends ? '2000-01' : historical ? civilDates.first : '2000-01-01'}
+                  max={queryingTrends ? previousMonth(1) : historical ? civilDates.last : undefined}
+                  value={queryingTrends ? scope.start_date.slice(0, 7) : scope.start_date}
+                  onChange={event => setScope({...scope, start_date: queryingTrends && event.target.value ? event.target.value + '-01' : event.target.value})} />
               </label>
-              <label className={styles.field}>{t('end')}
-                <input type="date" required min={scope.start_date || (historical ? civilDates.first : '2000-01-01')}
-                  max={historical ? civilDates.last : undefined} value={scope.end_date}
-                  onChange={event => setScope({...scope, end_date: event.target.value})} />
+              <label className={styles.field}>{t(queryingTrends ? 'officialTrends.end' : 'end')}
+                <input key={queryingTrends ? 'end-month' : 'end-date'} type={queryingTrends ? 'month' : 'date'} required
+                  min={queryingTrends ? scope.start_date.slice(0, 7) || '2000-01' : scope.start_date || (historical ? civilDates.first : '2000-01-01')}
+                  max={queryingTrends ? previousMonth(1) : historical ? civilDates.last : undefined}
+                  value={queryingTrends ? scope.end_date.slice(0, 7) : scope.end_date}
+                  onChange={event => setScope({...scope, end_date: queryingTrends && event.target.value ? event.target.value + '-01' : event.target.value})} />
               </label>
             </div>
-            <p className={styles.hint}>{t(scope.source === 'wikimedia' ? 'wikiDates' : historical ? 'civilDates' : 'dateHelp')}</p>
+            <p className={styles.hint}>{t(queryingTrends ? 'officialTrends.dateHelp' : importingTrends ? 'importedTrends.dateHelp' :
+              scope.source === 'wikimedia' ? 'wikiDates' : historical ? 'civilDates' : 'dateHelp')}</p>
             <div className={styles.pair}>
               <label className={styles.field}>{t('sourceLabel')}
                 <select value={scope.source} onChange={event => chooseSource(event.target.value as ResearchSource)}>
-                  {researchSources.map(source => <option key={source} value={source} disabled={source === 'google_trends'}>{t(source)}</option>)}
+                  {researchSources.map(source => <option key={source} value={source}>{t(source)}</option>)}
                 </select>
               </label>
-              <label className={styles.field}>{t('language')}
+              {queryingTrends && <label className={styles.field}>{t('officialTrends.geography')}
+                <select value={scope.geography ?? 'TR'} onChange={event => setScope({...scope, geography: event.target.value as TrendsCountry})}>
+                  {trendsCountries.map(country => <option key={country} value={country}>
+                    {new Intl.DisplayNames(locale, {type: 'region'}).of(country)}
+                  </option>)}
+                </select>
+              </label>}
+              {!isTrends && <label className={styles.field}>{t('language')}
                 <select value={scope.language ?? ''} disabled={scope.source === 'lemmy' || scope.source === 'wikimedia' || historical}
                   onChange={event => setScope({...scope, language: (event.target.value || null) as ResearchScope['language']})}>
                   <option value="">{t('allLanguages')}</option>
                   <option value="en">{t('english')}</option>
                   <option value="tr">{t('turkish')}</option>
                 </select>
-              </label>
+              </label>}
             </div>
+            {importingTrends && <>
+              <label className={styles.field}>{t('importedTrends.link')}
+                <input type="url" required value={exploreLink} maxLength={2048}
+                  onChange={event => applyExploreLink(event.target.value)} />
+              </label>
+              <label className={styles.field}>{t('importedTrends.file')}
+                <input type="file" accept=".csv,text/csv" required onChange={event => {
+                  setTrendsFile(event.target.files?.[0] ?? null);
+                  setSameChart(false);
+                }} />
+              </label>
+              <p className={styles.hint}>{t('importedTrends.help')}</p>
+              <label className={styles.analysisChoice}>
+                <input type="checkbox" required checked={sameChart} onChange={event => setSameChart(event.target.checked)} />
+                {' '}{t('importedTrends.sameChart')}
+              </label>
+            </>}
             {scope.source === 'lemmy' && <label className={styles.field}>{t('contentLabel')}
               <select value={scope.content ?? 'posts'} onChange={event => setScope({...scope,
                 content: event.target.value === 'comments' ? 'comments' : undefined})}>
@@ -157,7 +255,8 @@ export function TopicResearch({enabled}: {enabled: boolean}) {
           </fieldset>
           <div className={styles.actions}>
             <button className={styles.submit} type="submit" disabled={!enabled || pending}>
-              {t(pending ? 'searching' : 'submit')} <span aria-hidden="true">→</span>
+              {t(importingTrends ? (pending ? 'importedTrends.reading' : 'importedTrends.submit') : pending ? 'searching' : 'submit')}
+              {' '}<span aria-hidden="true">→</span>
             </button>
             {enabled && <div className={styles.examples}>
               <button type="button" disabled={pending} onClick={() => chooseExample('topic')}>{t('exampleTopic')}</button>
@@ -186,7 +285,7 @@ export function TopicResearch({enabled}: {enabled: boolean}) {
             <p>{t('blueskyHelp')}</p>
           </div>
           <div className={styles.source}>
-            <div><h3>Google Trends</h3><span>{t('unavailableStatus')}</span></div>
+            <div><h3>Google Trends</h3><span>{t('importedTrends.localCsv')}</span></div>
             <p>{t('trendsHelp')}</p>
           </div>
           <div className={styles.source}>
@@ -197,10 +296,13 @@ export function TopicResearch({enabled}: {enabled: boolean}) {
         </aside>
       </div>
       <div aria-live="polite" role="status">
-        {pending && <p className={styles.feedback}>{t('searching')}</p>}
+        {pending && <p className={styles.feedback}>{t(importingTrends ? 'importedTrends.reading' : 'searching')}</p>}
         {error && <p className={styles.feedback}>{t(`errors.${error.code}`)} {error.upstream && t('upstreamStatus', {status: error.upstream})}</p>}
+        {importingTrends && trendsError && <p className={styles.feedback}>{t(`importedTrends.errors.${trendsError}`)}</p>}
         {result && <p className={styles.visuallyHidden}>{t('resultAnnouncement', {count: result.records.length})}</p>}
       </div>
+      {officialResult && <TrendsOfficialResult data={officialResult} />}
+      {trendsResult && <TrendsCsvResults key={trendsResult.sha256} {...trendsResult} />}
       {result && <ResearchResults result={result} />}
     </section>
   );

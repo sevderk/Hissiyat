@@ -20,7 +20,8 @@ SEARCH_ENDPOINT = "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts"
 LEMMY_ORIGIN = "https://lemmy.world"
 LEMMY_SEARCH_ENDPOINT = f"{LEMMY_ORIGIN}/api/v3/search"
 LIVE_SOURCES = ("bluesky", "lemmy", "wikimedia")
-APPROVAL_SOURCES = (*LIVE_SOURCES, "civil_comments")
+APPROVAL_SOURCES = (*LIVE_SOURCES, "civil_comments", "google_trends")
+TRENDS_COUNTRIES = ("TR", "US", "GB")
 ANALYSIS_SOURCES = ("fictional", "wikimedia", "civil_comments")
 CIVIL_FIRST = date(2015, 1, 1)
 CIVIL_LAST = date(2017, 12, 31)
@@ -91,8 +92,19 @@ class ResearchRequest(BaseModel):
 
     @model_validator(mode="after")
     def validate_scope(self):
-        if not date(2000, 1, 1) <= self.start_date <= self.end_date <= datetime.now(UTC).date():
+        today = datetime.now(UTC).date()
+        if not date(2000, 1, 1) <= self.start_date <= self.end_date <= today:
             raise ValueError("Invalid date range.")
+        if self.source == "google_trends":
+            month_distance = (self.end_date.year - self.start_date.year) * 12 + self.end_date.month - self.start_date.month
+            if (self.start_date.day != 1 or self.end_date.day != 1
+                    or self.end_date >= today.replace(day=1) or month_distance >= 12
+                    or self.geography not in TRENDS_COUNTRIES
+                    or self.language is not None or self.content is not None or self.analyze_discussion
+                    or not all(character.isalnum() or category(character).startswith("M") or character in " -'’"
+                               for character in self.query)):
+                raise ValueError("Invalid Google Trends term, country or month range.")
+            return self
         if self.source not in ("wikimedia", "civil_comments") and (self.end_date - self.start_date).days >= 31:
             raise ValueError("Date range exceeds 31 days.")
         capabilities = CAPABILITIES[self.source]

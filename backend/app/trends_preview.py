@@ -11,7 +11,8 @@ from urllib.parse import urlsplit
 import warnings
 
 from app.core.config import Settings
-from app.core.trends_research import TERM, DocumentedFields, GraphError, adapt_graph
+from app.core.research import ResearchError, upstream_error
+from app.core.trends_research import TERM, DocumentedFields, GraphError, adapt_graph, graph_line, summarize_graph
 
 HOST = "trends.googleapis.com"
 DISCOVERY = f"https://{HOST}/$discovery/rest?version=v1beta"
@@ -19,6 +20,13 @@ MAX_BYTES = 1024 * 1024
 SHAPE_FIELDS = frozenset({"lines", "term", "points", "date", "time", "timestamp", "startDate", "startTime",
                           "geo", "region", "regionCode", "geography", "granularity", "aggregation", "value",
                           "status", "valueStatus", "isMissing", "isSuppressed", "hasData", "metadata", "scale", "unit"})
+METADATA_FIELDS = frozenset({"geo", "region", "regionCode", "geography", "granularity", "aggregation",
+                             "status", "valueStatus", "isMissing", "isSuppressed", "hasData", "metadata", "scale", "unit"})
+
+
+def _discard_transport_log(_record):
+    # These libraries may include a credential-bearing URL or untrusted response text.
+    return False
 
 
 class SingleSend:
@@ -69,7 +77,11 @@ def allowed_query(uri):
         return False
 
 
-def single_graph(key):
+def single_graph(key, **parameters):
+    if HTTPConnection.debuglevel:
+        return None, {"stage": "client", "reason": "wire_logging_enabled", "query_attempted": False}
+    for name in ("googleapiclient.discovery", "googleapiclient.http", "urllib3.connectionpool", "urllib3.util.retry"):
+        logging.getLogger(name).addFilter(_discard_transport_log)
     from googleapiclient.discovery import build
     from requests import Session
     from requests.adapters import HTTPAdapter
@@ -87,7 +99,7 @@ def single_graph(key):
                           "discovery_attempted": discovery.sent, "http_status": discovery.status}
         details.update(stage="request", discovery_attempted=discovery.sent)
         try:
-            operation = service.getGraph(terms=TERM)
+            operation = service.getGraph(**(parameters or {"terms": TERM}))
             uri, method = operation.uri, operation.method
             body, headers = operation.body, operation.headers
         except AttributeError:
@@ -128,10 +140,53 @@ def shape_summary(payload):
             "point_count": len(points) if isinstance(points, list) else None}
 
 
+def run_workspace_trends(scope, key, contract):
+    start_month, end_month = scope.start_date.isoformat()[:7], scope.end_date.isoformat()[:7]
+    payload, report = single_graph(key.get_secret_value(), terms=scope.query,
+                                   restrictions_geo=scope.geography,
+                                   restrictions_startDate=start_month, restrictions_endDate=end_month)
+    if payload is None:
+        status = report.get("http_status")
+        if report.get("reason") in ("operation_unavailable", "request_construction_failed", "request_target_rejected"):
+            raise ResearchError("trends_contract_error", 502)
+        if status is not None and 400 <= status <= 599:
+            raise upstream_error(status)
+        raise ResearchError("provider_unavailable", 502)
+    try:
+        graph_line(payload, scope.query)
+        shape = shape_summary(payload)
+        first = shape["first_point"]
+        analysis = None
+        if contract is not None:
+            series = adapt_graph(payload, contract, term=scope.query)
+            analysis = summarize_graph(series, geography=scope.geography, start_month=start_month, end_month=end_month)
+    except GraphError:
+        raise ResearchError("invalid_response", 502, 200) from None
+    return {
+        "source": "google_trends_research", "mode": scope.mode, "term": scope.query, "requested_geography": scope.geography,
+        "start_month": start_month, "end_month": end_month, "point_count": shape["point_count"],
+        "date_kind": "string" if first.get("date") == "str" else None,
+        "value_kind": {"int": "integer", "float": "decimal"}.get(first.get("value")),
+        "metadata_fields": sorted(METADATA_FIELDS.intersection(set(shape["root"]) | set(shape["line"]) | set(first))),
+        "measurement": contract.measurement if analysis is not None else None, "summary": analysis,
+    }
+
+
+def read_key():
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", getpass.GetPassWarning)
+        return getpass.getpass("Google Trends API key (hidden): ")
+
+
+def valid_key(key):
+    return 0 < len(key) <= 256 and key.isascii() and key.isprintable() and not any(c.isspace() for c in key)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fields", type=Path, help="Private local mapping verified against authenticated documentation")
     parser.add_argument("--status-file", type=Path, help="Optional new file for the same sanitized terminal result")
+    parser.add_argument("--workspace", action="store_true", help="Arm a local workspace run without sending a request")
     args = parser.parse_args()
 
     def finish(status, code, **details):
@@ -155,15 +210,38 @@ def main():
         settings = Settings()
         if settings.environment != "development":
             return finish("development_required", 2, query_attempted=False)
+        if args.workspace:
+            from pydantic import SecretStr
+            from app.api.v1.local_research import get_approved_request
+
+            approval = settings.google_trends_approved_request
+            if (args.fields is not None or settings.local_research != "1" or approval is None
+                    or get_approved_request("google_trends", approval) is None
+                    or any(value is not None for value in (settings.bluesky_approved_request,
+                           settings.lemmy_approved_request, settings.wikimedia_approved_request,
+                           settings.civil_approved_request))):
+                return finish("workspace_scope_required", 2, query_attempted=False)
+            stage = "key_input"
+            key = read_key()
+            if not valid_key(key):
+                return finish("invalid_key_input", 2, query_attempted=False)
+            settings = settings.model_copy(update={"google_trends_api_key": SecretStr(key)})
+            del key
+            from app.main import create_app
+            import uvicorn
+
+            stage = "workspace_server"
+            finish("workspace_ready", 0, query_attempted=False)
+            uvicorn.run(create_app(settings), host="127.0.0.1", port=8059,
+                        access_log=False, proxy_headers=False, log_config=None)
+            return 0
         fields = None
         if args.fields is not None:
             with args.fields.open("rb") as source:
                 fields = DocumentedFields.model_validate_json(source.read(4097))
         stage = "key_input"
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", getpass.GetPassWarning)
-            key = getpass.getpass("Google Trends API key (hidden, one approved career query): ")
-        if not key or not key.isascii() or not key.isprintable() or any(c.isspace() for c in key):
+        key = read_key()
+        if not valid_key(key):
             return finish("invalid_key_input", 2, query_attempted=False)
         stage = "client"
         payload, result = single_graph(key)
@@ -175,18 +253,14 @@ def main():
         if fields is None:
             return finish("completed", 0, **result, structure=summary, display="withheld")
         try:
-            preview = adapt_graph(payload, fields)
+            series = adapt_graph(payload, fields)
+            analysis = summarize_graph(series, geography=series["geography"],
+                                       start_month=series["points"][0]["date"][:7],
+                                       end_month=series["points"][-1]["date"][:7])
         except GraphError as failure:
             return finish("withheld", 2, **result, structure=summary, stage=stage, reason=str(failure))
-        del payload
-        stage = "preview_server"
-        import uvicorn
-        from app.main import create_app
-
-        finish("ready", 0, **result, structure=summary, stage=stage)
-        uvicorn.run(create_app(settings, trends_preview=preview), host="127.0.0.1", port=8058,
-                    access_log=False, proxy_headers=False, log_config=None)
-        return 0
+        return finish("completed", 0, **result, structure=summary, display="withheld",
+                      reviewed_observations=sum(analysis[key] for key in ("nonzero", "ambiguous_zero", "missing", "suppressed")))
     except (Exception, KeyboardInterrupt):
         return finish("stopped", 2, **{**result, "stage": stage})
 

@@ -10,6 +10,8 @@ from starlette.concurrency import run_in_threadpool
 from starlette.requests import ClientDisconnect
 
 from app.core.research import ANALYSIS_SOURCES, APPROVAL_SOURCES, MAX_BODY_BYTES, ResearchError, ResearchRequest, run_research
+from app.core.trends_research import SummaryContract
+from app.trends_preview import run_workspace_trends, valid_key
 
 router = APIRouter()
 LOOPBACK = re.compile(r"127\.0\.0\.1(?::[0-9]{1,5})?")
@@ -56,15 +58,31 @@ async def local_research(request: Request):
         return reply(403, {"code": "analysis_permission_unverified"})
     if scope.analyze_discussion and getattr(request.app.state, "text_analysis_busy", False):
         return reply(429, {"code": "busy"})
+    settings = request.app.state.settings
+    contract = None
     if scope.source in APPROVAL_SOURCES:
         if request.app.state.approved_research != scope:
             return reply(403, {"code": "approval_required"})
+        if scope.source == "google_trends":
+            if settings.google_trends_api_key is None or not valid_key(settings.google_trends_api_key.get_secret_value()):
+                return reply(503, {"code": "trends_not_configured"})
+            if settings.google_trends_summary_contract is not None:
+                configured = settings.google_trends_summary_contract.get_secret_value()
+                try:
+                    if len(configured) > 4096:
+                        return reply(503, {"code": "trends_not_configured"})
+                    contract = SummaryContract.model_validate_json(configured)
+                except ValidationError:
+                    return reply(503, {"code": "trends_not_configured"})
         # Compare and consume without yielding, including when the upstream call fails.
         request.app.state.approved_research = None
     if scope.analyze_discussion:
         request.app.state.text_analysis_busy = True
     try:
-        result = await run_in_threadpool(run_research, scope, model_directory=request.app.state.settings.local_analysis_model_dir)
+        if scope.source == "google_trends":
+            result = await run_in_threadpool(run_workspace_trends, scope, settings.google_trends_api_key, contract)
+        else:
+            result = await run_in_threadpool(run_research, scope, model_directory=settings.local_analysis_model_dir)
         return reply(200, result)
     except ResearchError as exc:
         failure = {"code": exc.code}

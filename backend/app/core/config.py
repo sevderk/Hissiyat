@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     lemmy_approved_request: SecretStr | None = Field(default=None, repr=False)
     wikimedia_approved_request: SecretStr | None = Field(default=None, repr=False)
     civil_approved_request: SecretStr | None = Field(default=None, repr=False)
+    google_trends_approved_request: SecretStr | None = Field(default=None, repr=False)
+    google_trends_api_key: SecretStr | None = Field(default=None, repr=False)
+    google_trends_summary_contract: SecretStr | None = Field(default=None, repr=False)
     local_analysis_model_dir: Path | None = Field(default=None, repr=False)
 
     database_host: str = "127.0.0.1"

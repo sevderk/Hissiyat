@@ -1,4 +1,5 @@
 import {isResearchEnabled, projectResearchResult, researchErrorFor, researchUpstreamStatus} from '@/lib/topic-research';
+import {projectOfficialTrends} from '@/lib/trends-research';
 
 const noStore = {'Cache-Control': 'no-store'};
 const replyError = (status: number, code: string) => Response.json({code}, {status, headers: noStore});
@@ -50,6 +51,13 @@ export async function POST(request: Request) {
   }
   if (!size || timedOut) return replyError(400, 'invalid_input');
 
+  let input: unknown;
+  try {
+    input = JSON.parse(new TextDecoder('utf-8', {fatal: true}).decode(buffer.subarray(0, size)));
+  } catch {
+    return replyError(400, 'invalid_input');
+  }
+  const isTrends = typeof input === 'object' && input !== null && 'source' in input && input.source === 'google_trends';
   try {
     const port = process.env.HISSIYAT_LOCAL_RESEARCH_PORT ?? process.env.HISSIYAT_LOCAL_ANALYSIS_PORT ?? '8000';
     if (!/^[1-9][0-9]{0,4}$/.test(port) || Number(port) > 65535) return replyError(503, 'unavailable');
@@ -59,7 +67,7 @@ export async function POST(request: Request) {
     });
     const data: unknown = await upstream.json();
     if (upstream.ok) {
-      const result = projectResearchResult(data);
+      const result = isTrends ? projectOfficialTrends(data) : projectResearchResult(data);
       if (result) return Response.json(result, {headers: noStore});
     } else {
       const code = researchErrorFor(upstream.status, data);

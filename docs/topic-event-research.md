@@ -45,10 +45,11 @@ represented in the eligible records. Geography remains unknown.
   numeric HTTP status with the fixed local error code. A later authenticated
   investigation could use the [official PDS session/proxy route](https://bsky.network/docs/bluesky-api/request-proxying/)
   under separate approval. Its availability for this use remains unverified.
-- **Google Trends** stays visible as a core search-interest source. Real
-  measurement metadata and permission to display results remain unresolved.
-  The [separate Trends preview](trends-research-preview.md) documents this
-  checkpoint and how to view the labeled fictional example offline.
+- **Google Trends** supports a one-use official API request for an approved
+  search term, country and month range. The local workspace reports response
+  structure or a verified aggregate summary. The Explore CSV fallback
+  displays its separate request-relative index. The
+  [Trends guide](trends-research-preview.md) documents both paths.
 - **Mastodon** remains an alternative. [Full-text status search](https://docs.joinmastodon.org/methods/search/)
   requires user authentication and an instance with status indexing. A
   [public hashtag timeline](https://docs.joinmastodon.org/methods/timelines/#tag)
@@ -219,8 +220,11 @@ does not establish a minor social theme. Expression rules cover a restricted
 set of explicit English phrasings and treat quotations, uncertainty and
 attribution conservatively. A news-comment sample may contain considerable
 indirect argument or general statements. Those possibilities remain unverified
-for the original pilot. Sample filtering and the 500-character limit can
-also affect what types of expression enter an analysis.
+for the original pilot. Missing article and comment context further restricts
+interpretation. Sample filtering and the 500-character limit can affect what
+types of expression enter an analysis. The cap was an operational constraint
+of this pilot. A later source needs a source-specific length and coverage
+check before choosing its own bound.
 
 Two queries were fixed before data access. Both use 1 January 2015 to
 31 December 2017 UTC, apply the existing filters, and select at most

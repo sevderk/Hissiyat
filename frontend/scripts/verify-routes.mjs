@@ -43,7 +43,7 @@ for (const [index, locale] of locales.entries()) {
   assert.ok(html.includes(`<h1 id="topic-research-heading">${topic.title}</h1>`), `${locale}: translated research heading`);
   assert.ok(html.includes(dashboard.noticeTitle), `${locale}: translated demo notice`);
   assert.ok(html.includes(topic.intro), `${locale}: translated purpose`);
-  assert.ok(html.includes(topic.unavailableStatus) && html.includes(topic.unsupportedGeography));
+  assert.ok(html.includes(topic.importedTrends.localCsv) && html.includes(topic.unsupportedGeography));
   assert.ok(html.includes(topic.lemmy) && html.includes(topic.lemmyHelp), `${locale}: Lemmy coverage`);
   assert.ok(html.includes(topic.wikimedia) && html.includes(topic.wikiHelp), `${locale}: Wikimedia pilot coverage`);
   assert.equal(html.includes(`>${topic.exampleTopic}</button>`), expectTopicResearch, `${locale}: research controls`);
@@ -147,7 +147,9 @@ if (expectTopicResearch) {
   assert.equal((await submitResearch(topicScope, {Origin: 'https://external.invalid'})).status, 403);
   assert.equal((await submitResearch(topicScope, {'Sec-Fetch-Site': 'cross-site'})).status, 403);
   assert.equal((await submitResearch({...topicScope, geography: 'TR'})).status, 400);
-  assert.equal((await submitResearch({...topicScope, source: 'google_trends', language: null})).status, 422);
+  assert.equal((await submitResearch({...topicScope, source: 'google_trends', language: null})).status, 400);
+  assert.equal((await submitResearch({...topicScope, source: 'google_trends', language: null,
+    geography: 'TR', query: 'unapproved fixture', start_date: '2025-01-01', end_date: '2025-02-01'})).status, 403);
   const lemmyScope = {...topicScope, source: 'lemmy', query: 'fictional fixture only', language: null};
   assert.equal((await submitResearch({...lemmyScope, language: 'en'})).status, 400);
   if (expectLemmyFixture) {
