@@ -8,6 +8,7 @@ import re
 from app.core.research import (
     MAX_POSTS, WIKI_PAGE, WIKI_TITLE, Record, ResearchError, ResearchRequest, bounds, fetch_json, publication_time,
 )
+from app.core.text_segments import MAX_DOCUMENT_CHARS
 
 ENDPOINT = "https://en.wikipedia.org/w/api.php"
 USER_AGENT = "HissiyatResearch/0.1 (https://github.com/sevderk/Hissiyat)"
@@ -67,7 +68,7 @@ def plain_english(body: object) -> str | None:
     text = " ".join("".join(parser.parts).split())
     words = set(re.findall(r"\b[a-z]+\b", text.lower()))
     letters = [char for char in text if char.isalpha()]
-    if (parser.ambiguous or parser.open_tags or not 0 < len(text) <= 500 or len(words & ENGLISH_MARKERS) < 3
+    if (parser.ambiguous or parser.open_tags or not 0 < len(text) <= MAX_DOCUMENT_CHARS or len(words & ENGLISH_MARKERS) < 3
             or sum(char.isascii() for char in letters) < .9 * len(letters)
             or "<" in text or ">" in text or PERSONAL_OR_IMPORTED.search(text)):
         return None

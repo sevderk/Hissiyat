@@ -236,8 +236,8 @@ if (expectLocalAnalysis) {
   assert.equal(await status('{}', {'Sec-Fetch-Site': 'cross-site'}), 403);
   assert.equal(await status('{"texts":["zzconfidentialmarker"]}'), 400);
   const large = new ReadableStream({start(controller) {
-    controller.enqueue(new Uint8Array(33_000));
-    controller.enqueue(new Uint8Array(33_000));
+    controller.enqueue(new Uint8Array(132_000));
+    controller.enqueue(new Uint8Array(132_000));
     controller.close();
   }});
   assert.equal((await fetch(analysisUrl, {method: 'POST', headers, body: large, duplex: 'half'})).status, 413);

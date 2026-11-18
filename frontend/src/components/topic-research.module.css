@@ -101,6 +101,12 @@
 .trendsTable :is(th, td) { padding: .4rem .45rem; border-bottom: 1px solid var(--line); text-align: start; }
 .trendsTable tr[data-selected] { background: var(--pale); }
 .trendsHash { overflow-wrap: anywhere; }
+.evidenceDetails { margin-top: .8rem; }
+.comparisonScroll { overflow-x: auto; max-width: 100%; }
+.comparisonScroll table { min-width: 42rem; }
+.evidenceDetails summary, .explorer summary { cursor: pointer; color: var(--deep); font-weight: 600; }
+.evidenceQuote { margin-top: .5rem; border-inline-start: 3px solid #89aa99; padding-inline-start: .7rem; white-space: pre-wrap; }
+.results > .panel + .grid { margin-top: .8rem; }
 
 @media (max-width: 760px) {
   .grid, .results .grid { grid-template-columns: minmax(0, 1fr); }

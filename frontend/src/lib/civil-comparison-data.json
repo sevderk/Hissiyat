@@ -1,0 +1,892 @@
+{
+  "schema_version": 1,
+  "dataset": {
+    "source": "https://huggingface.co/datasets/google/jigsaw_unintended_bias",
+    "license": "CC0 1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "artifact": "test_public_expanded.csv.gz",
+    "revision": "9beb047ad342ac2c3ac209d2d74e0b7c833fe294",
+    "sha256": "a5a8fba390af3f17639b1bcef9b1c1b38373d3e45728f7eb814bfe5f3ea1c3d2",
+    "examined": 97320,
+    "retrieved_at": "2026-11-18T18:56:23.721401+00:00"
+  },
+  "study_window": [
+    "2015-01-01",
+    "2017-12-31"
+  ],
+  "geography": "unknown",
+  "article_context": "unavailable",
+  "questions": {
+    "wages": {
+      "query": "minimum wage | living wage | hourly wages | low wages",
+      "legacy": {
+        "matched": 236,
+        "outside_dates": 0,
+        "invalid": 0,
+        "duplicates": 0,
+        "screening": {
+          "length": 125,
+          "privacy_or_markup": 6,
+          "language": 15,
+          "moderation": 2,
+          "safety_labels": 9
+        },
+        "eligible": 79,
+        "selected": 65,
+        "selected_characters": 18407,
+        "selected_long_documents": 0,
+        "analyzed": 65,
+        "characters": 18407,
+        "segments": 82,
+        "processing_exclusions": {
+          "language_or_markup": 0,
+          "document_limit": 0,
+          "duplicate": 0,
+          "collection_limit": 0,
+          "segment_limit": 0
+        },
+        "expression_method": "explicit_english_rules_v1",
+        "counts": {
+          "worry": 0,
+          "excitement": 0,
+          "frustration": 0,
+          "confidence": 0,
+          "curiosity": 0,
+          "information": 0,
+          "guidance": 0,
+          "support": 0,
+          "reported": 0,
+          "problem": null,
+          "reason": null
+        },
+        "documents_with_expressions": 0,
+        "evidence_spans": null,
+        "abstentions": null,
+        "late_evidence_documents": null,
+        "rule_documents": null,
+        "topics_status": "comparison",
+        "topics": {
+          "methods": {
+            "nmf": {
+              "groups": [
+                {
+                  "size": 57,
+                  "keywords": [
+                    "jobs",
+                    "work",
+                    "help"
+                  ]
+                },
+                {
+                  "size": 8,
+                  "keywords": []
+                }
+              ],
+              "unassigned": 0,
+              "iteration_limit": false
+            },
+            "minilm": {
+              "groups": [
+                {
+                  "size": 35,
+                  "keywords": [
+                    "jobs",
+                    "work",
+                    "cost"
+                  ]
+                },
+                {
+                  "size": 30,
+                  "keywords": [
+                    "jobs",
+                    "work"
+                  ]
+                }
+              ],
+              "unassigned": 0,
+              "iteration_limit": false
+            }
+          },
+          "agreement": {
+            "ari": -0.008,
+            "common_assigned": 65
+          },
+          "separation": {
+            "nmf": 0.0091,
+            "minilm": 0.077
+          }
+        },
+        "sensitivity": {
+          "k": 3,
+          "status": "comparison",
+          "topics": {
+            "methods": {
+              "nmf": {
+                "groups": [
+                  {
+                    "size": 45,
+                    "keywords": [
+                      "jobs",
+                      "help",
+                      "work"
+                    ]
+                  },
+                  {
+                    "size": 7,
+                    "keywords": []
+                  },
+                  {
+                    "size": 13,
+                    "keywords": []
+                  }
+                ],
+                "unassigned": 0,
+                "iteration_limit": false
+              },
+              "minilm": {
+                "groups": [
+                  {
+                    "size": 18,
+                    "keywords": []
+                  },
+                  {
+                    "size": 18,
+                    "keywords": [
+                      "help",
+                      "jobs"
+                    ]
+                  },
+                  {
+                    "size": 29,
+                    "keywords": [
+                      "jobs",
+                      "work"
+                    ]
+                  }
+                ],
+                "unassigned": 0,
+                "iteration_limit": false
+              }
+            },
+            "agreement": {
+              "ari": 0.1141,
+              "common_assigned": 65
+            },
+            "separation": {
+              "nmf": 0.0137,
+              "minilm": 0.031
+            }
+          }
+        }
+      },
+      "updated": {
+        "matched": 236,
+        "outside_dates": 0,
+        "invalid": 0,
+        "duplicates": 0,
+        "screening": {
+          "length": 0,
+          "privacy_or_markup": 11,
+          "language": 15,
+          "moderation": 6,
+          "safety_labels": 25
+        },
+        "eligible": 179,
+        "selected": 100,
+        "selected_characters": 59727,
+        "selected_long_documents": 65,
+        "analyzed": 100,
+        "characters": 59727,
+        "segments": 217,
+        "processing_exclusions": {
+          "language_or_markup": 0,
+          "document_limit": 0,
+          "duplicate": 0,
+          "collection_limit": 0,
+          "segment_limit": 0
+        },
+        "expression_method": "explicit_english_spans_v2",
+        "counts": {
+          "worry": 0,
+          "excitement": 0,
+          "frustration": 0,
+          "confidence": 1,
+          "curiosity": 0,
+          "information": 0,
+          "guidance": 0,
+          "support": 0,
+          "reported": 1,
+          "problem": 0,
+          "reason": 0
+        },
+        "documents_with_expressions": 2,
+        "evidence_spans": 2,
+        "abstentions": {
+          "quoted": 63,
+          "ambiguous": 93
+        },
+        "late_evidence_documents": 0,
+        "rule_documents": {
+          "self_emotion_v2": 1,
+          "stated_need_v2": 0,
+          "direct_request_v2": 0,
+          "first_person_past_v2": 1,
+          "stated_problem_v1": 0,
+          "explicit_reason_v1": 0
+        },
+        "topics_status": "comparison",
+        "topics": {
+          "methods": {
+            "nmf": {
+              "groups": [
+                {
+                  "size": 91,
+                  "keywords": [
+                    "jobs",
+                    "cost",
+                    "work",
+                    "help"
+                  ]
+                },
+                {
+                  "size": 9,
+                  "keywords": []
+                }
+              ],
+              "unassigned": 0,
+              "iteration_limit": false
+            },
+            "minilm": {
+              "groups": [
+                {
+                  "size": 49,
+                  "keywords": [
+                    "jobs",
+                    "support",
+                    "work"
+                  ]
+                },
+                {
+                  "size": 51,
+                  "keywords": [
+                    "jobs",
+                    "cost",
+                    "work",
+                    "school"
+                  ]
+                }
+              ],
+              "unassigned": 0,
+              "iteration_limit": false
+            }
+          },
+          "agreement": {
+            "ari": -0.002,
+            "common_assigned": 100
+          },
+          "separation": {
+            "nmf": 0.0062,
+            "minilm": 0.0801
+          }
+        },
+        "sensitivity": {
+          "k": 3,
+          "status": "comparison",
+          "topics": {
+            "methods": {
+              "nmf": {
+                "groups": [
+                  {
+                    "size": 38,
+                    "keywords": [
+                      "cost",
+                      "jobs"
+                    ]
+                  },
+                  {
+                    "size": 9,
+                    "keywords": []
+                  },
+                  {
+                    "size": 53,
+                    "keywords": [
+                      "jobs",
+                      "work",
+                      "education",
+                      "school"
+                    ]
+                  }
+                ],
+                "unassigned": 0,
+                "iteration_limit": false
+              },
+              "minilm": {
+                "groups": [
+                  {
+                    "size": 31,
+                    "keywords": [
+                      "support",
+                      "work",
+                      "jobs"
+                    ]
+                  },
+                  {
+                    "size": 17,
+                    "keywords": [
+                      "jobs"
+                    ]
+                  },
+                  {
+                    "size": 52,
+                    "keywords": [
+                      "cost",
+                      "jobs",
+                      "work",
+                      "benefits"
+                    ]
+                  }
+                ],
+                "unassigned": 0,
+                "iteration_limit": false
+              }
+            },
+            "agreement": {
+              "ari": 0.0116,
+              "common_assigned": 100
+            },
+            "separation": {
+              "nmf": 0.0083,
+              "minilm": 0.0804
+            }
+          }
+        }
+      },
+      "selection": {
+        "shared": 35,
+        "legacy_only": 30,
+        "updated_only": 65
+      },
+      "paired": {
+        "documents": 35,
+        "legacy_detected_documents": 0,
+        "updated_detected_documents": 0,
+        "categories": {
+          "worry": {
+            "legacy": 0,
+            "updated": 0,
+            "retained": 0,
+            "gained": 0,
+            "lost": 0
+          },
+          "excitement": {
+            "legacy": 0,
+            "updated": 0,
+            "retained": 0,
+            "gained": 0,
+            "lost": 0
+          },
+          "frustration": {
+            "legacy": 0,
+            "updated": 0,
+            "retained": 0,
+            "gained": 0,
+            "lost": 0
+          },
+          "confidence": {
+            "legacy": 0,
+            "updated": 0,
+            "retained": 0,
+            "gained": 0,
+            "lost": 0
+          },
+          "curiosity": {
+            "legacy": 0,
+            "updated": 0,
+            "retained": 0,
+            "gained": 0,
+            "lost": 0
+          },
+          "information": {
+            "legacy": 0,
+            "updated": 0,
+            "retained": 0,
+            "gained": 0,
+            "lost": 0
+          },
+          "guidance": {
+            "legacy": 0,
+            "updated": 0,
+            "retained": 0,
+            "gained": 0,
+            "lost": 0
+          },
+          "support": {
+            "legacy": 0,
+            "updated": 0,
+            "retained": 0,
+            "gained": 0,
+            "lost": 0
+          },
+          "reported": {
+            "legacy": 0,
+            "updated": 0,
+            "retained": 0,
+            "gained": 0,
+            "lost": 0
+          }
+        },
+        "new_categories": {
+          "problem": 0,
+          "reason": 0
+        }
+      }
+    },
+    "job_opportunities": {
+      "query": "job opportunities | job creation | create jobs | creating jobs | find a job | finding a job | looking for work",
+      "legacy": {
+        "matched": 104,
+        "outside_dates": 0,
+        "invalid": 0,
+        "duplicates": 0,
+        "screening": {
+          "length": 50,
+          "privacy_or_markup": 0,
+          "language": 5,
+          "moderation": 1,
+          "safety_labels": 6
+        },
+        "eligible": 42,
+        "selected": 42,
+        "selected_characters": 12555,
+        "selected_long_documents": 0,
+        "analyzed": 42,
+        "characters": 12555,
+        "segments": 52,
+        "processing_exclusions": {
+          "language_or_markup": 0,
+          "document_limit": 0,
+          "duplicate": 0,
+          "collection_limit": 0,
+          "segment_limit": 0
+        },
+        "expression_method": "explicit_english_rules_v1",
+        "counts": {
+          "worry": 0,
+          "excitement": 0,
+          "frustration": 0,
+          "confidence": 0,
+          "curiosity": 0,
+          "information": 0,
+          "guidance": 0,
+          "support": 0,
+          "reported": 0,
+          "problem": null,
+          "reason": null
+        },
+        "documents_with_expressions": 0,
+        "evidence_spans": null,
+        "abstentions": null,
+        "late_evidence_documents": null,
+        "rule_documents": null,
+        "topics_status": "comparison",
+        "topics": {
+          "methods": {
+            "nmf": {
+              "groups": [
+                {
+                  "size": 28,
+                  "keywords": [
+                    "jobs",
+                    "work",
+                    "help"
+                  ]
+                },
+                {
+                  "size": 14,
+                  "keywords": [
+                    "opportunities",
+                    "jobs"
+                  ]
+                }
+              ],
+              "unassigned": 0,
+              "iteration_limit": false
+            },
+            "minilm": {
+              "groups": [
+                {
+                  "size": 16,
+                  "keywords": [
+                    "work",
+                    "jobs"
+                  ]
+                },
+                {
+                  "size": 26,
+                  "keywords": [
+                    "jobs",
+                    "opportunities",
+                    "work"
+                  ]
+                }
+              ],
+              "unassigned": 0,
+              "iteration_limit": false
+            }
+          },
+          "agreement": {
+            "ari": -0.0065,
+            "common_assigned": 42
+          },
+          "separation": {
+            "nmf": 0.0168,
+            "minilm": 0.0632
+          }
+        },
+        "sensitivity": {
+          "k": 3,
+          "status": "comparison",
+          "topics": {
+            "methods": {
+              "nmf": {
+                "groups": [
+                  {
+                    "size": 18,
+                    "keywords": [
+                      "jobs"
+                    ]
+                  },
+                  {
+                    "size": 12,
+                    "keywords": [
+                      "opportunities",
+                      "jobs"
+                    ]
+                  },
+                  {
+                    "size": 12,
+                    "keywords": [
+                      "work",
+                      "jobs"
+                    ]
+                  }
+                ],
+                "unassigned": 0,
+                "iteration_limit": false
+              },
+              "minilm": {
+                "groups": [
+                  {
+                    "size": 18,
+                    "keywords": [
+                      "jobs"
+                    ]
+                  },
+                  {
+                    "size": 15,
+                    "keywords": [
+                      "opportunities",
+                      "jobs",
+                      "work"
+                    ]
+                  },
+                  {
+                    "size": 9,
+                    "keywords": [
+                      "work",
+                      "jobs"
+                    ]
+                  }
+                ],
+                "unassigned": 0,
+                "iteration_limit": false
+              }
+            },
+            "agreement": {
+              "ari": 0.2845,
+              "common_assigned": 42
+            },
+            "separation": {
+              "nmf": 0.0223,
+              "minilm": 0.0649
+            }
+          }
+        }
+      },
+      "updated": {
+        "matched": 104,
+        "outside_dates": 0,
+        "invalid": 0,
+        "duplicates": 0,
+        "screening": {
+          "length": 0,
+          "privacy_or_markup": 3,
+          "language": 5,
+          "moderation": 7,
+          "safety_labels": 13
+        },
+        "eligible": 76,
+        "selected": 76,
+        "selected_characters": 40770,
+        "selected_long_documents": 34,
+        "analyzed": 76,
+        "characters": 40770,
+        "segments": 146,
+        "processing_exclusions": {
+          "language_or_markup": 0,
+          "document_limit": 0,
+          "duplicate": 0,
+          "collection_limit": 0,
+          "segment_limit": 0
+        },
+        "expression_method": "explicit_english_spans_v2",
+        "counts": {
+          "worry": 0,
+          "excitement": 0,
+          "frustration": 0,
+          "confidence": 0,
+          "curiosity": 0,
+          "information": 0,
+          "guidance": 0,
+          "support": 0,
+          "reported": 1,
+          "problem": 0,
+          "reason": 0
+        },
+        "documents_with_expressions": 1,
+        "evidence_spans": 1,
+        "abstentions": {
+          "quoted": 75,
+          "ambiguous": 71
+        },
+        "late_evidence_documents": 0,
+        "rule_documents": {
+          "self_emotion_v2": 0,
+          "stated_need_v2": 0,
+          "direct_request_v2": 0,
+          "first_person_past_v2": 1,
+          "stated_problem_v1": 0,
+          "explicit_reason_v1": 0
+        },
+        "topics_status": "comparison",
+        "topics": {
+          "methods": {
+            "nmf": {
+              "groups": [
+                {
+                  "size": 35,
+                  "keywords": [
+                    "opportunities",
+                    "work",
+                    "community",
+                    "help"
+                  ]
+                },
+                {
+                  "size": 41,
+                  "keywords": [
+                    "jobs",
+                    "help",
+                    "cost",
+                    "work"
+                  ]
+                }
+              ],
+              "unassigned": 0,
+              "iteration_limit": false
+            },
+            "minilm": {
+              "groups": [
+                {
+                  "size": 48,
+                  "keywords": [
+                    "jobs",
+                    "opportunities",
+                    "work",
+                    "help"
+                  ]
+                },
+                {
+                  "size": 28,
+                  "keywords": [
+                    "work",
+                    "opportunities",
+                    "career",
+                    "jobs"
+                  ]
+                }
+              ],
+              "unassigned": 0,
+              "iteration_limit": false
+            }
+          },
+          "agreement": {
+            "ari": 0.3582,
+            "common_assigned": 76
+          },
+          "separation": {
+            "nmf": 0.0139,
+            "minilm": 0.0899
+          }
+        },
+        "sensitivity": {
+          "k": 3,
+          "status": "comparison",
+          "topics": {
+            "methods": {
+              "nmf": {
+                "groups": [
+                  {
+                    "size": 11,
+                    "keywords": [
+                      "opportunities",
+                      "community"
+                    ]
+                  },
+                  {
+                    "size": 36,
+                    "keywords": [
+                      "jobs",
+                      "help",
+                      "cost",
+                      "community"
+                    ]
+                  },
+                  {
+                    "size": 29,
+                    "keywords": [
+                      "work",
+                      "help",
+                      "career",
+                      "jobs"
+                    ]
+                  }
+                ],
+                "unassigned": 0,
+                "iteration_limit": false
+              },
+              "minilm": {
+                "groups": [
+                  {
+                    "size": 19,
+                    "keywords": [
+                      "opportunities",
+                      "work",
+                      "jobs"
+                    ]
+                  },
+                  {
+                    "size": 30,
+                    "keywords": [
+                      "work",
+                      "jobs",
+                      "opportunities",
+                      "help"
+                    ]
+                  },
+                  {
+                    "size": 27,
+                    "keywords": [
+                      "jobs",
+                      "work",
+                      "cost"
+                    ]
+                  }
+                ],
+                "unassigned": 0,
+                "iteration_limit": false
+              }
+            },
+            "agreement": {
+              "ari": 0.2473,
+              "common_assigned": 76
+            },
+            "separation": {
+              "nmf": 0.0166,
+              "minilm": 0.0773
+            }
+          }
+        }
+      },
+      "selection": {
+        "shared": 42,
+        "legacy_only": 0,
+        "updated_only": 34
+      },
+      "paired": {
+        "documents": 42,
+        "legacy_detected_documents": 0,
+        "updated_detected_documents": 0,
+        "categories": {
+          "worry": {
+            "legacy": 0,
+            "updated": 0,
+            "retained": 0,
+            "gained": 0,
+            "lost": 0
+          },
+          "excitement": {
+            "legacy": 0,
+            "updated": 0,
+            "retained": 0,
+            "gained": 0,
+            "lost": 0
+          },
+          "frustration": {
+            "legacy": 0,
+            "updated": 0,
+            "retained": 0,
+            "gained": 0,
+            "lost": 0
+          },
+          "confidence": {
+            "legacy": 0,
+            "updated": 0,
+            "retained": 0,
+            "gained": 0,
+            "lost": 0
+          },
+          "curiosity": {
+            "legacy": 0,
+            "updated": 0,
+            "retained": 0,
+            "gained": 0,
+            "lost": 0
+          },
+          "information": {
+            "legacy": 0,
+            "updated": 0,
+            "retained": 0,
+            "gained": 0,
+            "lost": 0
+          },
+          "guidance": {
+            "legacy": 0,
+            "updated": 0,
+            "retained": 0,
+            "gained": 0,
+            "lost": 0
+          },
+          "support": {
+            "legacy": 0,
+            "updated": 0,
+            "retained": 0,
+            "gained": 0,
+            "lost": 0
+          },
+          "reported": {
+            "legacy": 0,
+            "updated": 0,
+            "retained": 0,
+            "gained": 0,
+            "lost": 0
+          }
+        },
+        "new_categories": {
+          "problem": 0,
+          "reason": 0
+        }
+      }
+    }
+  }
+}

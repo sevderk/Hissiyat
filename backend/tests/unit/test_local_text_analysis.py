@@ -72,7 +72,7 @@ def test_empty_vocabulary_rows_are_reported_as_unassigned():
     {"k": 2.0, "texts": EXAMPLES["career"]}, {"k": "2", "texts": EXAMPLES["career"]},
     {"k": 2, "texts": []}, {"k": 2, "texts": [PRIVATE] * 11},
     {"k": 2, "texts": [PRIVATE] * 101}, {"k": 2, "texts": [" "] * 12},
-    {"k": 2, "texts": [42] * 12}, {"k": 2, "texts": [PRIVATE * 20] * 12},
+    {"k": 2, "texts": [42] * 12}, {"k": 2, "texts": ["x" * 8001] * 12},
     {"k": 2, "texts": EXAMPLES["career"], "unexpected": PRIVATE},
     {"k": 2, "texts": EXAMPLES["career"], "method": PRIVATE},
     {"k": 2, "texts": EXAMPLES["career"], "include_signals": "true"},

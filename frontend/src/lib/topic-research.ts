@@ -1,6 +1,7 @@
 import {analysisLimits, isExpressionSignals, isLocalAnalysisResult, type ExpressionSignals,
   type LocalAnalysisResult} from './local-analysis-contract.ts';
 import type {TrendsCountry} from './trends-research.ts';
+import {projectExpressionEvidence, projectProcessing, type ExpressionEvidence, type Processing} from './expression-evidence.ts';
 
 export const researchSources = ['google_trends', 'google_trends_csv', 'fictional', 'civil_comments', 'wikimedia', 'lemmy', 'bluesky'] as const;
 export const wikimediaTitle = 'Talk:USB flash drive';
@@ -62,6 +63,8 @@ type DiscussionAnalysis = {
   topics_status: 'comparison' | 'nmf_only' | 'insufficient_texts' | 'insufficient_variation';
   topics: LocalAnalysisResult | null;
   expression_signals: ExpressionSignals;
+  expression_evidence?: ExpressionEvidence;
+  processing?: Processing;
 };
 
 export const researchErrors = {
@@ -140,7 +143,17 @@ function projectDiscussion(value: unknown, records: ResearchRecord[]): Discussio
       break;
     default: return null;
   }
-  return {evidence_rows: rows, topics_status, topics, expression_signals};
+  const result: DiscussionAnalysis = {evidence_rows: rows, topics_status, topics, expression_signals};
+  if (value.expression_evidence !== undefined || value.processing !== undefined) {
+    const checked = projectExpressionEvidence(value.expression_evidence, rows, records);
+    const processing = projectProcessing(value.processing, rows.length, records.length);
+    if (!checked || !processing) return null;
+    const signals = {...expression_signals.emotions, ...expression_signals.needs, ...expression_signals.experiences};
+    if (Object.entries(signals).some(([label, count]) => checked.counts[label as keyof typeof checked.counts] !== count)) return null;
+    result.expression_evidence = checked;
+    result.processing = processing;
+  }
+  return result;
 }
 
 function validCount(value: unknown, max: number): value is number {
@@ -158,6 +171,8 @@ export function topicEvidence(topics: LocalAnalysisResult) {
     weakAgreement: topics.agreement?.ari != null && topics.agreement.ari <= 0.1,
     limitedTerms: methods.some(([, method]) => method.groups.some(group => group.size > 0 && group.keywords.length === 0)),
     iterationLimit: methods.some(([, method]) => method.iteration_limit),
+    weakSeparation: Object.entries(topics.separation ?? {}).filter(([, score]) => score !== null && score <= 0.1)
+      .map(([method]) => method),
   };
 }
 
@@ -236,7 +251,7 @@ export function projectResearchResult(value: unknown): ResearchResult | null {
       if (articleCount > 4) return null;
       articleCounts.set(item.article_id, articleCount);
       records.push({...basic, source, reference: null, thread_reference: null, article_id: item.article_id, publication_id: item.publication_id});
-    } else if (source === 'fictional' && item.reference === null && typeof item.text === 'string' && item.text.length <= 3000) {
+    } else if (source === 'fictional' && item.reference === null && typeof item.text === 'string' && [...item.text].length <= 8000) {
       records.push({...basic, source, reference: null, text: item.text, thread_reference: null});
     } else return null;
   }

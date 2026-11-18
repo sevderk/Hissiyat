@@ -92,7 +92,8 @@ npm.cmd run dev
 Open `http://127.0.0.1:3000/tr#local-text-analysis` (or replace `tr` with `en`).
 Select either fictional collection or enter fictional or appropriately
 de-identified English texts, one per line. Run with two or three groups.
-The 12–100 text limit, 500-character limit per text, and 64 KiB JSON limit
+The 12–100 text limit, 8,000-character limit per text, 100,000-character collection
+limit and 256 KiB JSON limit
 apply to both examples and custom input. Only bounded in-memory CPU analysis
 and aggregate output are used. A keyword needs at least three distinct
 modeled texts in its group and must appear in the neutral disclosure vocabulary.
@@ -114,12 +115,17 @@ and loads a CPU-only session. There is no model download or fallback. An
 unavailable model produces a controlled message and the NMF selection stays
 available.
 
-MiniLM uses two inference threads, batches of eight, a 256-token limit and
+MiniLM uses two inference threads, batches of eight, a 256-token segment limit and
 K-means with seed 42 and 20 initializations. Its displayed terms summarize
 recurring words in the assigned texts using TF-IDF after clustering. The
 comparison runs both methods on the same submission and reports adjusted
 Rand index over the texts assigned by both. Group numbers are arbitrary.
 Topic validity and generalization require separate evaluation.
+
+Long inputs use complete-document TF-IDF and character-weighted, normalized
+MiniLM segment vectors. A token overflow rejects MiniLM processing for that
+submission. The [document processing specification](human-experience-analysis.md)
+describes the segment bounds and document denominators.
 
 Run `npm.cmd run test:routes` with `FRONTEND_EXPECT_LOCAL_ANALYSIS=1` to
 exercise both examples through the proxy. Also set `FRONTEND_EXPECT_MINILM=1`
@@ -127,6 +133,12 @@ when the verified model is configured. The backend unit tests cover
 validation, output disclosure and concurrency with the optional CPU packages.
 
 ### Expressed emotion, need and experience signals
+
+This separate local text tool retains its aggregate-only expression contract.
+The main topic/event workspace uses the newer versioned evidence-span method
+and provides document-linked evidence and problems/reasons alongside these
+categories. Its [method specification](human-experience-analysis.md) documents
+the distinction. Historical pilot results have not been recomputed.
 
 The development-only browser requests `include_signals` with the regular
 analysis submission. The response adds only counts and the total submitted

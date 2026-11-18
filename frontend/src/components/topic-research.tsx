@@ -4,6 +4,8 @@ import {useLocale, useTranslations} from 'next-intl';
 import {type FormEvent, useState} from 'react';
 import {TrendsCsvResults} from '@/components/trends-csv-results';
 import {TrendsOfficialResult} from '@/components/trends-official-result';
+import {DiscussionEvidence} from '@/components/discussion-evidence';
+import {CivilComparison} from '@/components/civil-comparison';
 import {expressionCategories} from '@/lib/local-analysis-contract';
 import {decodeTrendsCsv, importTrendsCsv, maxTrendsCsvBytes, readExploreLink, TrendsCsvError, type TrendsExport} from '@/lib/trends-csv';
 import {projectOfficialTrends, trendsCountries, type OfficialTrendsResult, type TrendsCountry} from '@/lib/trends-research';
@@ -56,6 +58,13 @@ export function TopicResearch({enabled}: {enabled: boolean}) {
 
   function chooseDiscussion() {
     setScope({mode: 'topic', source: 'fictional', query: 'community services', start_date: '2026-11-05',
+      end_date: '2026-11-16', language: 'en', geography: null, content: 'mixed', analyze_discussion: true});
+    setError(null);
+    setResult(null);
+  }
+
+  function chooseLongDiscussion() {
+    setScope({mode: 'topic', source: 'fictional', query: 'public service research', start_date: '2026-11-05',
       end_date: '2026-11-16', language: 'en', geography: null, content: 'mixed', analyze_discussion: true});
     setError(null);
     setResult(null);
@@ -262,6 +271,7 @@ export function TopicResearch({enabled}: {enabled: boolean}) {
               <button type="button" disabled={pending} onClick={() => chooseExample('topic')}>{t('exampleTopic')}</button>
               <button type="button" disabled={pending} onClick={() => chooseExample('event')}>{t('exampleEvent')}</button>
               <button type="button" disabled={pending} onClick={chooseDiscussion}>{t('discussionExample')}</button>
+              <button type="button" disabled={pending} onClick={chooseLongDiscussion}>{t('documentEvidence.example')}</button>
             </div>}
           </div>
           {!enabled && <p className={styles.hint}>{t('localOnly')}</p>}
@@ -304,6 +314,7 @@ export function TopicResearch({enabled}: {enabled: boolean}) {
       {officialResult && <TrendsOfficialResult data={officialResult} />}
       {trendsResult && <TrendsCsvResults key={trendsResult.sha256} {...trendsResult} />}
       {result && <ResearchResults result={result} />}
+      {enabled && <CivilComparison />}
     </section>
   );
 }
@@ -371,6 +382,7 @@ function ResearchResults({result}: {result: ResearchResult}) {
         <p>{t(dataset ? records.length === 0 ? 'civilEmpty' : 'civilLimitations' : records.length === 0 ? 'empty' : 'limitations')}</p>
       </div>
       <ResearchInterpretation result={result} />
+      {analysis && <DiscussionEvidence analysis={analysis} />}
       <div className={styles.grid}>
         <section className={styles.panel} aria-labelledby="discussion-topics-heading">
           <h3 id="discussion-topics-heading">{t('topicExploration')}</h3>
@@ -421,7 +433,7 @@ function ResearchResults({result}: {result: ResearchResult}) {
           <h3 id="topic-explorer-heading">{t('explorer')}</h3>
           {scope.source !== 'fictional' && <p className={styles.hint}>{t(dataset ? 'civilContext' : 'linkOnly')}</p>}
           <ol className={styles.explorer}>
-            {records.map((record, index) => <li key={`${record.reference ?? record.published_at}-${index}`}>
+            {records.map((record, index) => <li id={`research-document-${index}`} key={`${record.reference ?? record.published_at}-${index}`}>
               <p><time dateTime={record.published_at}>{dateTime.format(new Date(record.published_at))} UTC</time>
                 <span> · {t(record.kind === 'post' ? 'post' : 'comment')} · {record.source === 'lemmy' && record.source_language_id !== null
                   ? t('lemmyLanguageId', {id: record.source_language_id})
@@ -434,7 +446,8 @@ function ResearchResults({result}: {result: ResearchResult}) {
                   <a href={record.reference} target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer">{record.source === 'wikimedia' ? t('wikiSourcePage') : t('recordLink', {index: index + 1})} ↗</a>
                   {record.thread_reference && <a href={record.thread_reference} target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer">{t('threadLink')} ↗</a>}
                 </div>
-                : <p className={styles.exampleText}>{record.text}</p>}
+                : <details><summary>{t('documentEvidence.document', {number: index + 1})}</summary>
+                  <p className={styles.exampleText}>{record.text}</p></details>}
               {analysis?.evidence_rows.includes(index) && <span className={styles.hint}>{t('inAnalysis')}</span>}
             </li>)}
           </ol>
@@ -492,6 +505,12 @@ function ResearchInterpretation({result}: {result: ResearchResult}) {
               count: agreement.common_assigned})} {diagnostics.weakAgreement && t('weakAgreementEvidence')}</p>
             : <p>{t('noAgreementEvidence')}</p>}
           {diagnostics.limitedTerms && <p>{t('limitedTopicTerms')}</p>}
+          {topics.separation && Object.entries(topics.separation).map(([method, score]) =>
+            <p key={method}>{score === null ? t('documentEvidence.separationUnavailable', {method: methodTitle(method)}) :
+              t('documentEvidence.separation', {method: methodTitle(method), score: number.format(score),
+                count: topics.methods[method as 'nmf' | 'minilm']!.groups.reduce((sum, group) => sum + group.size, 0)})}</p>)}
+          {diagnostics.weakSeparation.length > 0 && <p>{t('documentEvidence.weakSeparation',
+            {methods: list.format(diagnostics.weakSeparation.map(methodTitle))})}</p>}
           {diagnostics.iterationLimit && <p>{t('iterationLimit')}</p>}
         </> : <p>{t(`topicStatuses.${analysis.topics_status}`)}</p>}
         <h4>{t('expressionEvidence')}</h4>

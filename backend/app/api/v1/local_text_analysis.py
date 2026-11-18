@@ -13,6 +13,7 @@ from app.core.local_text_analysis import (
     MAX_BODY_BYTES, MAX_TEXT_CHARS, MAX_TEXTS, MIN_TEXTS, InsufficientVariation, analyze_texts,
 )
 from app.core.minilm import ModelUnavailable
+from app.core.text_segments import segment_collection
 
 router = APIRouter()
 LOOPBACK_HOST = re.compile(r"127\.0\.0\.1(?::[0-9]{1,5})?")
@@ -59,6 +60,10 @@ async def local_text_analysis(request: Request):
                 body.extend(chunk)
         submission = AnalysisInput.model_validate_json(body)
         body.clear()
+        try:
+            segment_collection(submission.texts)
+        except ValueError:
+            return reply(400, {"code": "invalid_input"})
         result = await run_in_threadpool(
             analyze_texts, submission.texts, submission.k, submission.method or "nmf",
             request.app.state.settings.local_analysis_model_dir,

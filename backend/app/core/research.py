@@ -415,10 +415,10 @@ def run_research(scope: ResearchRequest, *, model_directory=None) -> dict:
                 seen.add(record.reference)
                 records.append(record)
     elif scope.source == "fictional":
-        from app.core.discussion_analysis import FICTIONAL_DISCUSSION
+        from app.core.discussion_analysis import FICTIONAL_DISCUSSION, FICTIONAL_LONG_DISCUSSION
 
         for day, language, text, kind in (*((day, language, text, "post") for day, language, text in FICTIONAL_POSTS),
-                                         *FICTIONAL_DISCUSSION):
+                                         *FICTIONAL_DISCUSSION, *FICTIONAL_LONG_DISCUSSION):
             timestamp = datetime(2026, 11, day, 12, tzinfo=UTC)
             if (start <= timestamp < end and scope.language in (None, language)
                     and scope.query.casefold() in text.casefold()

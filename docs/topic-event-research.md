@@ -121,6 +121,13 @@ coverage and reliability. Outputs include method distributions, expression
 counts, and row indices pointing to the input set behind those aggregates.
 No assignments, embeddings, or AI-written interpretation are returned.
 
+The longer fictional example contains the same 16 document units with additional
+paragraphs. The current [human-experience analysis specification](human-experience-analysis.md)
+documents the 8,000-character document bound, complete-document topic processing,
+separate segment counts, versioned expression spans, quotation abstention and
+cosine-silhouette diagnostics. Historical results below retain their original
+500-character eligibility protocol and have not been rerun.
+
 ## Historical Civil Comments pilot
 
 [Civil Comments](https://www.tensorflow.org/datasets/catalog/civil_comments)
@@ -301,6 +308,12 @@ coverage and exploratory distributions. Shared theme labels, stance and
 emotion prevalence remain unverified.
 
 ## Licensed Wikimedia discussion pilot
+
+The later [frozen-policy Civil Comments comparison](civil-policy-comparison.md)
+documents the single authorized Phase 9C retrieval, increased long-document
+coverage, unchanged rule outcomes on the shared subset and limited thematic
+separation. Its curated aggregate view is integrated into the local research
+workspace. The preceding Phase 8G results retain their original protocol.
 
 The pilot targets the English Wikipedia article discussion page `Talk:USB flash drive`.
 It requests one current snapshot using the first-party [DiscussionTools Action API](https://www.mediawiki.org/wiki/Extension:DiscussionTools#API)

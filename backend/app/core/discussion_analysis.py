@@ -4,9 +4,10 @@ from collections.abc import Sequence
 import re
 from typing import TYPE_CHECKING
 
-from app.core.expression_signals import aggregate_expression_signals
+from app.core.expression_evidence import evidence_signals, expression_evidence
 from app.core.local_text_analysis import MAX_TEXT_CHARS, MIN_TEXTS, InsufficientVariation, analyze_texts
 from app.core.minilm import ModelUnavailable
+from app.core.text_segments import MAX_COLLECTION_CHARS, MAX_SEGMENTS, segment_document
 
 if TYPE_CHECKING:
     from app.core.research import Record
@@ -30,16 +31,23 @@ FICTIONAL_DISCUSSION = (
     (13, "en", "I need more details about community services library access. I opened the website to check the rules.", "comment"),
     (13, "en", "I attended the community services transport meeting. I need support with the accessible route to the station.", "comment"),
 )
+FICTIONAL_LONG_DISCUSSION = tuple(
+    (day, language, text.replace("community services", "public service research")
+     + "\n\n" + "The fictional report describes the service, its opening hours and the full context of the visit. " * 8
+     + "\nI cannot access the booking form. I chose this service because the library was accessible.",
+     kind)
+    for day, language, text, kind in FICTIONAL_DISCUSSION
+)
 
 _MARKUP = re.compile(r"```|~~~|<[^>]+>|!?\[[^\]]*\]\(|https?://", re.IGNORECASE)
 
 
 def group_discussion(texts: list[str], k: int, model_directory):
     try:
-        return "comparison", analyze_texts(texts, k, "both", model_directory)
+        return "comparison", analyze_texts(texts, k, "both", model_directory, diagnostics=True)
     except ModelUnavailable:
         try:
-            return "nmf_only", analyze_texts(texts, k, "nmf")
+            return "nmf_only", analyze_texts(texts, k, "nmf", diagnostics=True)
         except InsufficientVariation:
             return "insufficient_variation", None
     except InsufficientVariation:
@@ -50,26 +58,49 @@ def analyze_discussion(records: "Sequence[Record]", model_directory=None, *, inc
     rows = []
     texts = []
     seen = set()
+    characters = segments = 0
+    excluded = dict.fromkeys(("language_or_markup", "document_limit", "duplicate", "collection_limit", "segment_limit"), 0)
     for index, record in enumerate(records):
-        # Preserve the unit of one post or reply. Skip ambiguous Markdown and quoted lines.
+        # Preserve the unit of one post or reply. Skip ambiguous markup.
         if "en" not in record.languages or _MARKUP.search(record.body):
+            excluded["language_or_markup"] += 1
             continue
-        text = " ".join(" ".join(line.split()) for line in record.body.splitlines()
-                        if line.strip() and not line.lstrip().startswith(">"))
-        fingerprint = text.casefold()
-        if not text or len(text) > MAX_TEXT_CHARS or fingerprint in seen:
+        # Original text remains the evidence coordinate system, including quoted paragraphs.
+        text = record.body
+        fingerprint = " ".join(text.casefold().split())
+        if not text.strip() or len(text) > MAX_TEXT_CHARS:
+            excluded["document_limit"] += 1
+            continue
+        if fingerprint in seen:
+            excluded["duplicate"] += 1
+            continue
+        if characters + len(text) > MAX_COLLECTION_CHARS or len(texts) >= 100:
+            excluded["collection_limit"] += 1
+            continue
+        try:
+            parts = segment_document(text)
+        except ValueError:
+            excluded["segment_limit"] += 1
+            continue
+        if segments + len(parts) > MAX_SEGMENTS:
+            excluded["segment_limit"] += 1
             continue
         seen.add(fingerprint)
         rows.append(index)
         texts.append(text)
+        characters += len(text)
+        segments += len(parts)
 
     topic_status, topics = (group_discussion(texts, 2, model_directory) if len(texts) >= MIN_TEXTS
                             else ("insufficient_texts", None))
+    expressions = expression_evidence(texts, rows, disclose_text=all(record.source == "fictional" for record in records))
     result = {
         "evidence_rows": rows,
         "topics_status": topic_status,
         "topics": topics,
-        "expression_signals": aggregate_expression_signals(texts),
+        "expression_signals": evidence_signals(expressions),
+        "expression_evidence": expressions,
+        "processing": {"documents": len(texts), "segments": segments, "characters": characters, "excluded": excluded},
     }
     if include_sensitivity:
         status, groups = (group_discussion(texts, 3, model_directory) if len(texts) >= 24

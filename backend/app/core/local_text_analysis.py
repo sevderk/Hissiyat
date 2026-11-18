@@ -5,11 +5,12 @@ from functools import lru_cache
 
 from app.core.minilm import CPU_THREADS, MiniLMEncoder
 from app.core.topic_model import KMEANS_MAX_ITER, NMF_MAX_ITER, fit_kmeans, fit_nmf, fit_tfidf, grouping_agreement
+from app.core.text_segments import MAX_DOCUMENT_CHARS, segment_collection
 
 MIN_TEXTS = 12
 MAX_TEXTS = 100
-MAX_TEXT_CHARS = 500
-MAX_BODY_BYTES = 65_536
+MAX_TEXT_CHARS = MAX_DOCUMENT_CHARS
+MAX_BODY_BYTES = 262_144
 MAX_FEATURES = 4_000
 
 # Disclosure vocabulary only. The fit uses the full bounded TF-IDF vocabulary.
@@ -68,13 +69,48 @@ def _encoder(directory):
     return MiniLMEncoder(directory)
 
 
-def analyze_texts(texts: list[str], k: int, method="nmf", model_directory=None) -> dict:
+def _document_vectors(texts, directory):
+    import numpy as np
+
+    encoder = _encoder(directory)
+    spans = segment_collection(texts)
+    pieces = [text[start:end] for text, segments in zip(texts, spans, strict=True) for start, end in segments]
+    encoded = encoder.encode(pieces, reject_truncation=True)
+    vectors = []
+    offset = 0
+    for text, segments in zip(texts, spans, strict=True):
+        weights = np.array([end - start for start, end in segments], dtype=np.float32)
+        vector = np.average(encoded[offset:offset + len(segments)], weights=weights, axis=0)
+        vectors.append(vector / max(float(np.linalg.norm(vector)), 1e-12))
+        offset += len(segments)
+    return np.asarray(vectors, dtype=np.float32)
+
+
+def _separation(matrix, assigned):
+    from sklearn.metrics import silhouette_score
+
+    valid = assigned >= 0
+    labels = assigned[valid]
+    if not 2 <= len(set(labels)) < len(labels):
+        return None
+    try:
+        return round(float(silhouette_score(matrix[valid], labels, metric="cosine")), 4)
+    except ValueError:
+        return None
+
+
+def analyze_texts(texts: list[str], k: int, method="nmf", model_directory=None, *, diagnostics=False) -> dict:
     from threadpoolctl import threadpool_limits
 
     lexical = None
     distinct = None
     labels = {}
     results = {}
+    separation = {}
+    try:
+        segment_collection(texts)
+    except ValueError:
+        raise InsufficientVariation from None
     with threadpool_limits(limits=CPU_THREADS), warnings.catch_warnings(record=True):
         warnings.simplefilter("always")
         try:
@@ -94,10 +130,12 @@ def analyze_texts(texts: list[str], k: int, method="nmf", model_directory=None) 
                 "unassigned": int((assigned == -1).sum()),
                 "iteration_limit": iterations >= NMF_MAX_ITER,
             }
+            if diagnostics:
+                separation["nmf"] = _separation(lexical[0], assigned)
         if method in ("minilm", "both"):
             if len({text.casefold() for text in texts}) < k:
                 raise InsufficientVariation
-            vectors = _encoder(model_directory).encode(texts)
+            vectors = _document_vectors(texts, model_directory)
             assigned, iterations = fit_kmeans(vectors, k)
             if len(set(assigned)) < k:
                 raise InsufficientVariation
@@ -107,5 +145,10 @@ def analyze_texts(texts: list[str], k: int, method="nmf", model_directory=None) 
                 "unassigned": 0,
                 "iteration_limit": iterations >= KMEANS_MAX_ITER,
             }
+            if diagnostics:
+                separation["minilm"] = _separation(vectors, assigned)
         agreement = grouping_agreement(labels["nmf"], labels["minilm"]) if method == "both" else None
-        return {"methods": results, "agreement": agreement}
+        result = {"methods": results, "agreement": agreement}
+        if diagnostics:
+            result["separation"] = separation
+        return result

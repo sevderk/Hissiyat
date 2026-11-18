@@ -136,7 +136,7 @@ def test_focused_study_has_one_download_and_independent_denominators(monkeypatch
         fictional_row(102, article_id="46", comment_text="The program would create jobs for this town."),
         fictional_row(103, comment_text="The minimum wages and jobs were listed for this fictional report."),
         fictional_row(104, comment_text="The minimum weekly wage and the living budget are part of this work."),
-        fictional_row(105, comment_text="The minimum wage applies to this program." + " For this program." * 30),
+        fictional_row(105, comment_text="The minimum wage applies to this program." + " For this program." * 500),
         fictional_row(106, comment_text="With the proposed plan I need advice about how to find a job."),
         fictional_row(107, comment_text="The school was testing a program for job opportunities.", threat="0.25"),
     ]

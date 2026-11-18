@@ -138,9 +138,13 @@ test('diagnostics distinguish uneven groups, low chance-adjusted overlap and una
   const topics = {methods: {nmf: {groups: [group(93), group(7, [])], unassigned: 0, iteration_limit: false},
     minilm: {groups: [group(62), group(38)], unassigned: 0, iteration_limit: false}},
   agreement: {ari: -0.0267, common_assigned: 100}};
-  assert.deepEqual(topicEvidence(topics), {uneven: ['nmf'], weakAgreement: true, limitedTerms: true, iterationLimit: false});
+  assert.deepEqual(topicEvidence(topics), {uneven: ['nmf'], weakAgreement: true, limitedTerms: true, iterationLimit: false, weakSeparation: []});
   topics.agreement.ari = null;
   topics.methods.nmf.groups = [group(90), group(10)];
   topics.methods.minilm.iteration_limit = true;
-  assert.deepEqual(topicEvidence(topics), {uneven: [], weakAgreement: false, limitedTerms: false, iterationLimit: true});
+  assert.deepEqual(topicEvidence(topics), {uneven: [], weakAgreement: false, limitedTerms: false, iterationLimit: true, weakSeparation: []});
+  topics.separation = {nmf: 0.1, minilm: -0.04};
+  assert.deepEqual(topicEvidence(topics).weakSeparation, ['nmf', 'minilm']);
+  topics.separation = {nmf: null, minilm: 0.5};
+  assert.deepEqual(topicEvidence(topics).weakSeparation, []);
 });

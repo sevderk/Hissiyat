@@ -91,8 +91,8 @@ def source_time(value: str) -> datetime | None:
 SCREENING_REASONS = ("length", "privacy_or_markup", "language", "moderation", "safety_labels")
 
 
-def exclusion_reason(text: str, normalized: str, row: dict) -> str | None:
-    if len(text) > MAX_TEXT_CHARS:
+def exclusion_reason(text: str, normalized: str, row: dict, *, max_text_chars=MAX_TEXT_CHARS) -> str | None:
+    if len(text) > max_text_chars:
         return "length"
     if PRIVACY_MARKERS.search(text):
         return "privacy_or_markup"
@@ -113,7 +113,8 @@ def phrase_pattern(phrase: str) -> str:
     return r"(?<!\w)" + re.escape(normalize("NFC", phrase.casefold())) + r"(?!\w)"
 
 
-def select_sample(rows: Iterable[dict], scope: ResearchRequest) -> tuple:
+def select_sample(rows: Iterable[dict], scope: ResearchRequest, *, max_text_chars=MAX_TEXT_CHARS,
+                  collapse_whitespace=False) -> tuple:
     start, end = bounds(scope)
     literal = re.compile("|".join(phrase_pattern(phrase) for phrase in civil_query_phrases(scope.query)))
     examined = matched = outside = invalid = duplicates = 0
@@ -123,8 +124,10 @@ def select_sample(rows: Iterable[dict], scope: ResearchRequest) -> tuple:
         examined += 1
         if examined > ARCHIVE_ROWS or None in row or any(row[column] is None for column in REQUIRED):
             raise ValueError
-        text = " ".join(normalize("NFC", row["comment_text"]).split())
-        normalized = normalize("NFC", text.casefold())
+        text = normalize("NFC", row["comment_text"]).strip()
+        if collapse_whitespace:
+            text = " ".join(text.split())
+        normalized = " ".join(text.casefold().split())
         if not literal.search(normalized):
             continue
         matched += 1
@@ -134,7 +137,7 @@ def select_sample(rows: Iterable[dict], scope: ResearchRequest) -> tuple:
             invalid += 1
         elif not start <= timestamp < end:
             outside += 1
-        elif reason := exclusion_reason(text, normalized, row):
+        elif reason := exclusion_reason(text, normalized, row, max_text_chars=max_text_chars):
             screening[reason] += 1
         else:
             article = row["article_id"] if IDENTIFIER.fullmatch(row["article_id"]) else None
@@ -165,14 +168,17 @@ def select_sample(rows: Iterable[dict], scope: ResearchRequest) -> tuple:
     return records, metrics, examined, len(identifiers), screening
 
 
-def archive_sample(payload: bytes | bytearray, scope: ResearchRequest) -> tuple:
+def archive_sample(payload: bytes | bytearray, scope: ResearchRequest, *, max_text_chars=MAX_TEXT_CHARS,
+                   collapse_whitespace=False) -> tuple:
     try:
         with gzip.GzipFile(fileobj=io.BytesIO(payload)) as stream, io.TextIOWrapper(stream, encoding="utf-8-sig", newline="") as text:
             reader = csv.DictReader(text, strict=True)
             header = reader.fieldnames or []
             if not REQUIRED.issubset(header) or len(header) != len(set(header)):
                 raise ValueError
-            records, metrics, examined, eligible, screening = select_sample(reader, scope)
+            records, metrics, examined, eligible, screening = select_sample(
+                reader, scope, max_text_chars=max_text_chars, collapse_whitespace=collapse_whitespace,
+            )
             if examined != ARCHIVE_ROWS:
                 raise ValueError
     except (ValueError, csv.Error, EOFError, OSError):

@@ -87,12 +87,14 @@ class MiniLMEncoder:
         except Exception:
             raise ModelUnavailable("local_model_load_failed") from None
 
-    def encode(self, texts):
+    def encode(self, texts, *, reject_truncation=False):
         import numpy as np
 
         vectors = []
         for offset in range(0, len(texts), BATCH_SIZE):
             batch = self._tokenizer.encode_batch(texts[offset:offset + BATCH_SIZE])
+            if reject_truncation and any(item.overflowing for item in batch):
+                raise ModelUnavailable("segment_token_budget_exceeded")
             fields = {
                 "input_ids": [item.ids for item in batch],
                 "attention_mask": [item.attention_mask for item in batch],
