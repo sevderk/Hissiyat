@@ -40,6 +40,15 @@ def create_app(settings: Settings | None = None, *, trends_preview: dict | None 
 
         application.state.trends_preview = trends_preview
         application.include_router(trends_preview_router, prefix=router.prefix)
+    if configuration.environment == "development" and configuration.local_research == "1":
+        from app.api.v1.local_research import get_approved_request, router as local_research_router
+
+        approvals = (("bluesky", configuration.bluesky_approved_request), ("lemmy", configuration.lemmy_approved_request),
+                     ("wikimedia", configuration.wikimedia_approved_request),
+                     ("civil_comments", configuration.civil_approved_request))
+        configured = [(source, value) for source, value in approvals if value is not None]
+        application.state.approved_research = get_approved_request(*configured[0]) if len(configured) == 1 else None
+        application.include_router(local_research_router, prefix=router.prefix)
     return application
 
 

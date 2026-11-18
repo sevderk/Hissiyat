@@ -1,0 +1,40 @@
+{
+  "type_": "Comments",
+  "comments": [
+    {
+      "comment": {
+        "id": 2147483630,
+        "post_id": 2147483640,
+        "ap_id": "https://lemmy.world/comment/2147483630",
+        "content": "fictional-confidential-content. I need help with the schedule.",
+        "published": "2026-11-10T09:12:30+03:00",
+        "updated": "2026-11-11T01:00:00Z",
+        "language_id": 37,
+        "local": true,
+        "deleted": false,
+        "removed": false
+      },
+      "post": {
+        "id": 2147483640,
+        "ap_id": "https://lemmy.world/post/2147483640",
+        "published": "2026-10-01T01:00:00Z",
+        "local": true,
+        "deleted": false,
+        "removed": false,
+        "nsfw": false
+      },
+      "community": {
+        "local": true,
+        "deleted": false,
+        "removed": false,
+        "nsfw": false,
+        "hidden": false,
+        "visibility": "Public"
+      },
+      "creator": {"name": "fictional-confidential-content"}
+    }
+  ],
+  "posts": [],
+  "communities": [],
+  "users": []
+}

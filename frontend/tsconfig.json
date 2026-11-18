@@ -4,6 +4,7 @@
     "lib": ["dom", "dom.iterable", "esnext"],
     "types": ["node", "react", "react-dom"],
     "allowJs": false,
+    "allowImportingTsExtensions": true,
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,

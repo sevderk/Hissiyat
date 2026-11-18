@@ -19,6 +19,11 @@ class Settings(BaseSettings):
     service_name: str = "Hissiyat API"
     environment: Literal["development", "test", "production"] = "development"
     local_text_analysis: Literal["0", "1"] = "0"
+    local_research: Literal["0", "1"] = "0"
+    bluesky_approved_request: SecretStr | None = Field(default=None, repr=False)
+    lemmy_approved_request: SecretStr | None = Field(default=None, repr=False)
+    wikimedia_approved_request: SecretStr | None = Field(default=None, repr=False)
+    civil_approved_request: SecretStr | None = Field(default=None, repr=False)
     local_analysis_model_dir: Path | None = Field(default=None, repr=False)
 
     database_host: str = "127.0.0.1"

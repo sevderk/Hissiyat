@@ -9,7 +9,7 @@ export const expressionCategories = {
   needs: ['information', 'guidance', 'support'],
   experiences: ['reported']
 } as const;
-type ExpressionSignals = {submitted_texts: number} & {
+export type ExpressionSignals = {submitted_texts: number} & {
   [Group in keyof typeof expressionCategories]: Record<typeof expressionCategories[Group][number], number>;
 };
 export type LocalAnalysisResult = {
@@ -41,7 +41,7 @@ function hasKeys(value: unknown, keys: readonly string[]): value is Record<strin
     Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
 }
 
-function isExpressionSignals(value: unknown, total: number): value is ExpressionSignals {
+export function isExpressionSignals(value: unknown, total: number): value is ExpressionSignals {
   if (!hasKeys(value, ['submitted_texts', ...Object.keys(expressionCategories)]) || value.submitted_texts !== total) {
     return false;
   }

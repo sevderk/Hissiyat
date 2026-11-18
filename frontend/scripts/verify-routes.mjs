@@ -6,6 +6,9 @@ const expectResearchPreview = process.env.FRONTEND_EXPECT_RESEARCH_PREVIEW === '
 const expectLocalAnalysis = process.env.FRONTEND_EXPECT_LOCAL_ANALYSIS === '1';
 const expectMiniLM = process.env.FRONTEND_EXPECT_MINILM === '1';
 const expectTrendsFixture = process.env.FRONTEND_EXPECT_TRENDS_FIXTURE === '1';
+const expectTopicResearch = process.env.FRONTEND_EXPECT_TOPIC_RESEARCH === '1';
+const expectLemmyFixture = process.env.FRONTEND_EXPECT_LEMMY_FIXTURE === '1';
+const expectWikiFixture = process.env.FRONTEND_EXPECT_WIKI_FIXTURE === '1';
 const locales = ['tr', 'en'];
 
 function messageKeys(value, prefix = '') {
@@ -36,10 +39,15 @@ for (const [index, locale] of locales.entries()) {
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.ok(html.includes(`<html lang="${locale}"`), `${locale}: document language`);
-  const {Dashboard: dashboard, LocalAnalysis: local, Research: research} = messages[index];
-  assert.ok(html.includes(`<h1>${dashboard.title}</h1>`), `${locale}: translated dashboard heading`);
+  const {Dashboard: dashboard, LocalAnalysis: local, Research: research, TopicResearch: topic} = messages[index];
+  assert.ok(html.includes(`<h1 id="topic-research-heading">${topic.title}</h1>`), `${locale}: translated research heading`);
   assert.ok(html.includes(dashboard.noticeTitle), `${locale}: translated demo notice`);
-  assert.ok(html.includes(dashboard.intro), `${locale}: translated purpose`);
+  assert.ok(html.includes(topic.intro), `${locale}: translated purpose`);
+  assert.ok(html.includes(topic.unavailableStatus) && html.includes(topic.unsupportedGeography));
+  assert.ok(html.includes(topic.lemmy) && html.includes(topic.lemmyHelp), `${locale}: Lemmy coverage`);
+  assert.ok(html.includes(topic.wikimedia) && html.includes(topic.wikiHelp), `${locale}: Wikimedia pilot coverage`);
+  assert.equal(html.includes(`>${topic.exampleTopic}</button>`), expectTopicResearch, `${locale}: research controls`);
+  assert.ok(html.indexOf('id="topic-research"') < html.indexOf('id="synthetic-demo"'));
   assert.ok(html.includes(dashboard.human.title) && html.includes(dashboard.search.title), `${locale}: both domains`);
   assert.ok(html.includes(dashboard.states.loading), `${locale}: loading state before hydration`);
   assert.match(html, /href="\/tr"/);
@@ -129,6 +137,93 @@ if (expectTrendsFixture) {
 
 const analysisUrl = baseUrl + '/api/local-text-analysis';
 const headers = {'Content-Type': 'application/json', 'Origin': new URL(baseUrl).origin};
+const topicResearchUrl = baseUrl + '/api/topic-research';
+const submitResearch = (query, extraHeaders = {}) => fetch(topicResearchUrl, {
+  method: 'POST', headers: {...headers, ...extraHeaders}, body: JSON.stringify(query),
+});
+assert.equal((await fetch(topicResearchUrl)).status, 404);
+const topicScope = {mode: 'topic', query: 'bisiklet yolları', source: 'fictional', start_date: '2026-11-05', end_date: '2026-11-16', language: 'tr', geography: null};
+if (expectTopicResearch) {
+  assert.equal((await submitResearch(topicScope, {Origin: 'https://external.invalid'})).status, 403);
+  assert.equal((await submitResearch(topicScope, {'Sec-Fetch-Site': 'cross-site'})).status, 403);
+  assert.equal((await submitResearch({...topicScope, geography: 'TR'})).status, 400);
+  assert.equal((await submitResearch({...topicScope, source: 'google_trends', language: null})).status, 422);
+  const lemmyScope = {...topicScope, source: 'lemmy', query: 'fictional fixture only', language: null};
+  assert.equal((await submitResearch({...lemmyScope, language: 'en'})).status, 400);
+  if (expectLemmyFixture) {
+    const response = await submitResearch(lemmyScope);
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    assert.equal(response.headers.get('set-cookie'), null);
+    const body = await response.text();
+    const result = JSON.parse(body);
+    assert.deepEqual(result.scope, lemmyScope);
+    assert.equal(result.capabilities.status, 'public_api');
+    assert.deepEqual(result.capabilities.languages, []);
+    assert.equal(result.retrieved, 1);
+    assert.deepEqual(result.records.map(record => [record.source, record.country, record.reference, record.source_language_id]),
+      [['lemmy', 'UNKNOWN', 'https://lemmy.world/post/2147483640', 37]]);
+    assert.doesNotMatch(body, /fictional-confidential-content|thumbnail_url|\"text\"/);
+    console.log('PASS fictional Lemmy fixture through both local APIs, source link and metadata only');
+  }
+  assert.deepEqual(await (await submitResearch(lemmyScope)).json(), {code: 'approval_required'});
+  assert.deepEqual(await (await submitResearch({...lemmyScope, content: 'comments', analyze_discussion: true})).json(),
+    {code: 'analysis_permission_unverified'});
+  const wikiScope = {...topicScope, source: 'wikimedia', query: 'Talk:USB flash drive', language: null,
+    content: 'comments', analyze_discussion: true, start_date: '2001-01-01'};
+  if (expectWikiFixture) {
+    const response = await submitResearch(wikiScope);
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    const body = await response.text();
+    const wiki = JSON.parse(body);
+    assert.equal(wiki.source_document.license, 'CC BY-SA 4.0');
+    assert.equal(wiki.retrieved, 2);
+    assert.deepEqual(wiki.discussion_analysis.evidence_rows, [0, 1]);
+    assert.equal(wiki.discussion_analysis.expression_signals.submitted_texts, 2);
+    assert.equal(wiki.discussion_analysis.topics_status, 'insufficient_texts');
+    assert.doesNotMatch(body, /FictionalEditor|FictionalReply|I need information|othercontent/);
+    console.log('PASS Wikimedia fixture through both local APIs, attribution, denominator and metadata only');
+  }
+  assert.deepEqual(await (await submitResearch(wikiScope)).json(), {code: 'approval_required'});
+  assert.equal((await submitResearch({...wikiScope, query: 'Talk:Other'})).status, 400);
+  for (const scope of [topicScope, {...topicScope, mode: 'event', query: 'river festival', language: 'en'}]) {
+    const response = await submitResearch(scope);
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('Cache-Control'), 'no-store');
+    assert.equal(response.headers.get('Set-Cookie'), null);
+    const result = await response.json();
+    assert.deepEqual(result.scope, scope);
+    assert.equal(result.capabilities.status, 'synthetic');
+    assert.equal(result.retrieved, 2);
+    assert.deepEqual(result.records.map(record => record.country), ['UNKNOWN', 'UNKNOWN']);
+    assert.ok(result.records.every(record => record.reference === null && record.text));
+  }
+  const empty = await (await submitResearch({...topicScope, query: 'unmatched fixture'})).json();
+  assert.equal(empty.retrieved, 0);
+  assert.deepEqual(empty.records, []);
+  console.log('PASS research topic and event, empty results, source and geography controls, and no-store');
+  const discussion = {...topicScope, query: 'community services', language: 'en', content: 'mixed', analyze_discussion: true};
+  const discussionResponse = await submitResearch(discussion);
+  assert.equal(discussionResponse.status, 200);
+  const sample = await discussionResponse.json();
+  assert.equal(sample.retrieved, 16);
+  assert.equal(sample.records.filter(record => record.kind === 'comment').length, 10);
+  assert.equal(sample.discussion_analysis.topics_status, expectMiniLM ? 'comparison' : 'nmf_only');
+  assert.deepEqual(sample.discussion_analysis.evidence_rows, Array.from({length: 16}, (_, index) => index));
+  assert.equal(sample.discussion_analysis.expression_signals.needs.information, 3);
+  const small = await (await submitResearch({...discussion, content: 'posts'})).json();
+  assert.equal(small.discussion_analysis.topics_status, 'insufficient_texts');
+  assert.equal(small.discussion_analysis.topics, null);
+  assert.equal(small.discussion_analysis.expression_signals.submitted_texts, 6);
+  console.log('PASS mixed fictional discussion, evidence indices, model grouping, signals and small-sample gating');
+} else {
+  assert.equal((await submitResearch(topicScope)).status, 404);
+  assert.equal((await submitResearch({...topicScope, source: 'civil_comments', query: 'work',
+    start_date: '2015-01-01', end_date: '2017-12-31', language: 'en',
+    content: 'comments', analyze_discussion: true})).status, 404);
+  console.log('PASS topic research API is disabled');
+}
 assert.equal((await fetch(analysisUrl)).status, 404);
 assert.equal((await fetch(analysisUrl, {method: 'OPTIONS'})).status, 404);
 const status = async (body, extraHeaders) => (await fetch(analysisUrl, {

@@ -5,10 +5,12 @@ import {AnalysisDashboard} from '@/components/analysis-dashboard';
 import {LocalAnalysis} from '@/components/local-analysis';
 import {ResearchFindings} from '@/components/research-findings';
 import {TrendsResearchPreview} from '@/components/trends-research-preview';
+import {TopicResearch} from '@/components/topic-research';
 import {routing} from '@/i18n/routing';
 import {isLocalAnalysisEnabled} from '@/lib/local-analysis-contract';
 import {isResearchPreviewEnabled} from '@/lib/research-preview';
 import {isTrendsPreviewEnabled} from '@/lib/trends-research';
+import {isResearchEnabled} from '@/lib/topic-research';
 
 export default async function HomePage({params}: {params: Promise<{locale: string}>}) {
   const {locale} = await params;
@@ -21,13 +23,14 @@ export default async function HomePage({params}: {params: Promise<{locale: strin
   const analysisMessages = showLocalAnalysis ? (await getMessages()).LocalAnalysis : null;
   const showTrends = isTrendsPreviewEnabled(process.env.NODE_ENV, process.env.HISSIYAT_TRENDS_PREVIEW);
   const trendsMessages = showTrends ? (await getMessages()).TrendsResearch : null;
+  const topicMessages = (await getMessages()).TopicResearch;
+  const showTopicResearch = isResearchEnabled(process.env.NODE_ENV, process.env.HISSIYAT_LOCAL_RESEARCH);
 
   return (
     <main id="main-content" tabIndex={-1} className="dashboard-shell">
-      <div className="dashboard-hero">
-        <h1>{t('title')}</h1>
-        <p>{t('intro')}</p>
-      </div>
+      <NextIntlClientProvider messages={{TopicResearch: topicMessages}}>
+        <TopicResearch enabled={showTopicResearch} />
+      </NextIntlClientProvider>
       {(showResearch || analysisMessages || trendsMessages) && (
         <nav className="dashboard-section-nav" aria-label={t('sectionNavigation')}>
           {analysisMessages && <a href="#local-text-analysis">{analysisMessages.title}</a>}

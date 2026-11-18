@@ -1,0 +1,37 @@
+{
+  "discussiontoolspageinfo": {
+    "transcludedfrom": {
+      "h-fixture": false,
+      "c-FictionalEditor-20261102110000-Fixture": false,
+      "c-FictionalReply-20261103120000-Fixture": false
+    },
+    "threaditemshtml": [
+      {
+        "type": "heading",
+        "id": "h-fixture",
+        "level": 0,
+        "html": "<h2>Fictional section</h2>",
+        "othercontent": "<p>Fictional page introduction excluded from analysis.</p>",
+        "replies": [
+          {
+            "type": "comment",
+            "id": "c-FictionalEditor-20261102110000-Fixture",
+            "author": "FictionalEditor",
+            "timestamp": "2026-11-02T11:00:00Z",
+            "html": "<p>I need information about the <em>storage</em> system and how it works.</p>",
+            "replies": [
+              {
+                "type": "comment",
+                "id": "c-FictionalReply-20261103120000-Fixture",
+                "author": "FictionalReply",
+                "timestamp": "2026-11-03T12:00:00Z",
+                "html": "<p>I used the software for this test and it was helpful.</p>",
+                "replies": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
