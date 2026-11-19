@@ -1,17 +1,44 @@
 """Loopback-only model generation for the most recent server-held evidence."""
 
 import asyncio
-from typing import Literal
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Request
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
 from starlette.concurrency import run_in_threadpool
 from starlette.requests import ClientDisconnect
 
 from app.api.v1.local_research import LOOPBACK, reply
 from app.core.local_interpretation import InterpretationError, generate_interpretation
+from app.core.imported_evidence import CsvSummary, HistoricalInput, csv_evidence, historical_evidence
 
 router = APIRouter()
+EvidenceInput = TypeAdapter(Annotated[CsvSummary | HistoricalInput, Field(discriminator="source")])
+
+
+@router.post("/local/evidence", include_in_schema=False)
+async def prepare_evidence(request: Request):
+    headers = request.headers
+    if (request.client is None or request.client.host != "127.0.0.1"
+            or not LOOPBACK.fullmatch(headers.get("host", ""))
+            or headers.get("x-hissiyat-local-research") != "1"
+            or any(name in headers for name in ("origin", "sec-fetch-site", "forwarded", "x-forwarded-for", "x-real-ip"))):
+        return reply(404, {"code": "not_found"})
+    if request.url.query or headers.get("content-type", "").partition(";")[0].strip().lower() != "application/json" or "content-encoding" in headers:
+        return reply(400, {"code": "invalid_evidence"})
+    try:
+        body = bytearray()
+        async with asyncio.timeout(5):
+            async for chunk in request.stream():
+                if len(body) + len(chunk) > 16384:
+                    return reply(413, {"code": "too_large"})
+                body.extend(chunk)
+        submission = EvidenceInput.validate_json(body)
+        package = csv_evidence(submission) if isinstance(submission, CsvSummary) else historical_evidence(submission.question)
+    except (ValueError, OSError, ClientDisconnect, TimeoutError):
+        return reply(400, {"code": "invalid_evidence"})
+    request.app.state.interpretation_evidence = package
+    return reply(200, package.model_dump())
 
 
 class InterpretationInput(BaseModel):

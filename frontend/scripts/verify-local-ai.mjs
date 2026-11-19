@@ -37,11 +37,13 @@ try {
   websocket = new WebSocket(targets.find(target => target.type === 'page').webSocketDebuggerUrl);
   await new Promise((accept, reject) => {websocket.onopen = accept; websocket.onerror = reject;});
   let serial = 0;
-  const pending = new Map(), requests = [], responses = [];
+  const pending = new Map(), requests = [], responses = [], browserErrors = [];
   websocket.onmessage = ({data}) => {
     const message = JSON.parse(data);
     if (message.method === 'Network.requestWillBeSent') requests.push(message.params.request.url);
     if (message.method === 'Network.responseReceived') responses.push(message.params);
+    if (message.method === 'Runtime.exceptionThrown') browserErrors.push(message.params.exceptionDetails.exception?.description?.split('\n')[0] ?? message.params.exceptionDetails.text);
+    if (message.method === 'Runtime.consoleAPICalled' && message.params.type === 'error') browserErrors.push(message.params.args.map(arg => arg.value).filter(value => typeof value === 'string').join(' ').slice(0, 300));
     const operation = pending.get(message.id);
     if (operation) {
       pending.delete(message.id);
@@ -58,7 +60,75 @@ try {
     if (result.exceptionDetails) throw new Error('Browser evaluation failed');
     return result.result.value;
   };
-  await call('Network.enable'); await call('Page.enable');
+  await call('Network.enable'); await call('Page.enable'); await call('Runtime.enable');
+  if (process.env.HISSIYAT_ACCEPTANCE_CSV_PATH) {
+    // The owner explicitly selects this existing file. No directory enumeration.
+    const csvPath = process.env.HISSIYAT_ACCEPTANCE_CSV_PATH;
+    const exploreUrl = process.env.HISSIYAT_ACCEPTANCE_EXPLORE_URL;
+    assert.ok(csvPath && existsSync(csvPath) && exploreUrl);
+    const inputValue = async (selector, value) => evaluate('(()=>{const el=document.querySelector('+JSON.stringify(selector)+');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value").set.call(el,'+JSON.stringify(value)+');el.dispatchEvent(new Event("input",{bubbles:true}));})()');
+    const navigate = async language => {
+      const messages=JSON.parse(readFileSync('messages/'+language+'.json','utf8')).TopicResearch;
+      await call('Emulation.setDeviceMetricsOverride',{width:language==='tr'?430:1365,height:900,deviceScaleFactor:1,mobile:false});
+      await call('Page.navigate',{url:baseUrl+'/'+language});
+      try {await waitFor(()=>evaluate('(()=>{const el=Array.from(document.querySelectorAll("#topic-research button")).find(el=>el.textContent==='+JSON.stringify(messages.discussionExample)+');return el && Object.keys(el).some(key=>key.startsWith("__reactProps$") && typeof el[key].onClick==="function");})()'),'hydrated research');}
+      catch(error){console.log('PAGE_DIAGNOSTIC',browserErrors.slice(0,6),await evaluate('({title:document.title,fieldset:!!document.querySelector("#topic-research fieldset")})'));throw error;}
+      return messages;
+    };
+    const generate = async (selector,label,language) => {
+      const started=Date.now();
+      await evaluate('document.querySelector('+JSON.stringify(selector+' button')+').click()');
+      await waitFor(()=>evaluate('!!document.querySelector('+JSON.stringify(selector+' [data-testid=ai-generated-result]')+') || !!document.querySelector('+JSON.stringify(selector+' [role=alert]')+')'),'real report',180000);
+      const error=await evaluate('document.querySelector('+JSON.stringify(selector+' [role=alert]')+')?.textContent');
+      assert.ok(!error,error);
+      const inference=responses.filter(r=>new URL(r.response.url).pathname==='/api/research-interpretation').at(-1);
+      assert.equal(inference.response.status,200);
+      const data=JSON.parse((await call('Network.getResponseBody',{requestId:inference.requestId})).body);
+      assert.equal(data.model,'hissiyat-qwen3-1.7b');assert.equal(data.result.language,language);
+      assert.ok(data.result.findings.every(f=>data.evidence_package.facts.some(e=>e.id===f.evidence_id && e.kind===f.kind)));
+      assert.ok(await evaluate('Array.from(document.querySelectorAll('+JSON.stringify(selector+' [data-testid=ai-generated-result] a')+')).every(a=>!!document.getElementById(a.hash.slice(1)))'));
+      assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'));
+      assert.ok(!await evaluate('document.body.textContent.includes("MISSING_MESSAGE")'));
+      console.log('PASS '+JSON.stringify({label,language,seconds:Math.round((Date.now()-started)/1000),status:data.result.status,source:data.result.scope.source,
+        overview:data.result.overview,findings:data.result.findings,uncertainties:data.result.uncertainties,questions:data.result.questions}));
+      return data;
+    };
+    if (process.env.HISSIYAT_ACCEPTANCE_SKIP_CSV !== '1') {
+    await navigate('tr');
+    await evaluate('(()=>{const el=document.querySelector("#topic-research select");Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,"value").set.call(el,"google_trends_csv");el.dispatchEvent(new Event("change",{bubbles:true}));})()');
+    try {await waitFor(()=>evaluate('!!document.querySelector("#topic-research input[type=file]")'),'file controls');}
+    catch(error) {console.log('CONTROL_STATE',await evaluate('Array.from(document.querySelectorAll("#topic-research select")).map(el=>({value:el.value,options:Array.from(el.options).map(x=>x.value)}))'),browserErrors.slice(0,4));throw error;}
+    await inputValue('#topic-research input[type=url]',exploreUrl);
+    const doc=await call('DOM.getDocument');
+    const file=await call('DOM.querySelector',{nodeId:doc.root.nodeId,selector:'#topic-research input[type=file]'});
+    await call('DOM.setFileInputFiles',{nodeId:file.nodeId,files:[csvPath]});
+    await evaluate('document.querySelector("#topic-research input[type=checkbox]").click()');
+    await evaluate('document.querySelector("#topic-research button[type=submit]").click()');
+    await waitFor(()=>evaluate('!!document.querySelector("#csv-ai-TR button")'),'CSV analysis');
+    const csv=await generate('#csv-ai-TR','owner Explore CSV','tr');
+    assert.equal(csv.evidence_package.fictional,false);assert.equal(csv.result.scope.geography,'TR');
+    assert.equal(csv.result.scope.start_date,'2026-09-01');assert.equal(csv.result.scope.end_date,'2026-10-31');
+    assert.equal(csv.evidence_package.facts.find(f=>f.metric==='csv_coverage').values.observations,61);
+    }
+    for(const [question,language] of (process.env.HISSIYAT_ACCEPTANCE_HISTORICAL_TR==='1' ? [['wages','tr']] : [['wages','en'],['job_opportunities','en']])){
+      await navigate(language);
+      await evaluate('document.querySelector('+JSON.stringify('[data-comparison-question='+question+']')+').open=true');
+      const data=await generate('#historical-ai-'+question,'historical '+question,language);
+      assert.equal(data.result.scope.start_date,'2015-01-01');assert.equal(data.result.scope.geography,'UNKNOWN');
+      assert.equal(data.evidence_package.fictional,false);assert.equal(data.result.findings.length,3);
+    }
+    if(process.env.HISSIYAT_ACCEPTANCE_HISTORICAL_TR!=='1') {
+    const messages=await navigate('en');
+    await evaluate('Array.from(document.querySelectorAll("#topic-research button")).find(el=>el.textContent==='+JSON.stringify(messages.discussionExample)+').click()');
+    await waitFor(()=>evaluate('document.querySelector("#topic-research input[type=text]").value==="community services"'),'fictional controls');
+    await inputValue('#topic-research input[type=text]','printing');
+    await evaluate('document.querySelector("#topic-research button[type=submit]").click()');
+    await waitFor(()=>evaluate('!!document.querySelector("#ai-research-interpretation button")'),'insufficient sample');
+    const weak=await generate('#ai-research-interpretation','fictional insufficient evidence','en');
+    assert.equal(weak.result.status,'insufficient');assert.equal(weak.evidence_package.fictional,true);
+    assert.ok(!weak.result.findings.some(f=>f.kind==='exploratory'));
+    }
+  } else {
   for (const [language, query, expected, status] of [['tr', 'community services', 16, 'exploratory'], ['en', 'printing', 2, 'insufficient']]) {
     const messages = JSON.parse(readFileSync('messages/' + language + '.json', 'utf8')).TopicResearch;
     await call('Emulation.setDeviceMetricsOverride', {width: language === 'tr' ? 430 : 1365, height: 900, deviceScaleFactor: 1, mobile: false});
@@ -99,6 +169,7 @@ try {
     assert.ok(!await evaluate('document.body.textContent.includes("MISSING_MESSAGE")'));
     console.log('PASS ' + JSON.stringify({language, mode: generated.result.scope.mode, documents: expected, status,
       realModel: generated.model, seconds: Math.round((Date.now() - started) / 1000), overview: generated.result.overview.text}));
+  }
   }
   if (productionUrl) {
     const reply = await fetch(productionUrl + '/api/research-interpretation', {method: 'POST',

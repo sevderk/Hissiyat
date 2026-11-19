@@ -14,7 +14,7 @@ class EvidenceFact(BaseModel):
 
     id: str = Field(pattern=r"E[0-9]{2}")
     metric: str
-    unit: Literal["documents", "days", "score", "periods", "metadata"]
+    unit: Literal["documents", "days", "score", "periods", "metadata", "interest_index"]
     kind: Literal["observed", "exploratory", "insufficient"]
     values: dict[str, str | int | float | None]
     denominator: int | None
@@ -24,7 +24,7 @@ class EvidenceFact(BaseModel):
 class EvidenceScope(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True, frozen=True)
 
-    source: Literal["fictional", "bluesky", "lemmy", "wikimedia", "civil_comments", "google_trends"]
+    source: Literal["fictional", "bluesky", "lemmy", "wikimedia", "civil_comments", "google_trends", "google_trends_csv"]
     family: Literal["discussion", "search_interest"]
     mode: Literal["topic", "event"]
     query: str

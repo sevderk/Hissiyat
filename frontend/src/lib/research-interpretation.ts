@@ -1,5 +1,5 @@
 export type FactKind = 'observed' | 'exploratory' | 'insufficient';
-export type EvidenceFact = {id: string; metric: string; unit: 'documents' | 'days' | 'score' | 'periods' | 'metadata'; kind: FactKind; values: Record<string, string | number | null>; denominator: number | null; method: string};
+export type EvidenceFact = {id: string; metric: string; unit: 'documents' | 'days' | 'score' | 'periods' | 'metadata' | 'interest_index'; kind: FactKind; values: Record<string, string | number | null>; denominator: number | null; method: string};
 export type EvidenceScope = {
   source: string; family: 'discussion' | 'search_interest'; mode: 'topic' | 'event'; query: string;
   start_date: string; end_date: string; date_unit: 'day' | 'month'; geography: string;
@@ -25,6 +25,14 @@ const fields: Record<string, string[]> = {
   agreement: ['ari'], topic_validity: [], topics_unavailable: ['reason'], expression_validity: [], analysis_unavailable: [],
   search_summary: ['cadence', 'first_period', 'last_period', 'nonzero', 'ambiguous_zero', 'missing', 'suppressed', 'peak_period', 'peak_ties', 'direction'],
   search_unverified: [], search_limits: [], geography: ['geography'], context: [], generalization: [],
+  csv_coverage: ['observations', 'observed', 'missing', 'suppressed', 'ambiguous_zero', 'first_period', 'last_period', 'interval'],
+  csv_extremes: ['peak', 'peak_date', 'peak_ties', 'trough', 'trough_date', 'trough_ties'],
+  csv_change: ['first', 'first_date', 'last', 'last_date', 'change'],
+  csv_origin: ['sha256', 'attribution', 'measurement'], csv_limits: ['scale_min', 'scale_max'],
+  historical_coverage: ['legacy', 'updated', 'shared', 'legacy_only', 'updated_only', 'long_documents'],
+  historical_expressions: ['legacy', 'legacy_denominator', 'updated', 'updated_denominator', 'paired_legacy', 'paired_updated', 'paired_documents'],
+  historical_clusters: ['legacy_ari', 'updated_ari', 'updated_nmf_silhouette', 'updated_minilm_silhouette'],
+  historical_origin: ['examined', 'report_sha256', 'retrieved_at', 'query', 'license'], historical_limits: [],
 };
 function object(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -51,25 +59,38 @@ export function projectEvidencePackage(value: unknown): EvidencePackage | null {
       typeof value.fictional !== 'boolean' || value.status !== 'exploratory' && value.status !== 'insufficient' ||
       !object(value.scope) || !Array.isArray(value.facts) || value.facts.length < 1 || value.facts.length > 24) return null;
   const s = value.scope;
-  if (!['fictional', 'bluesky', 'lemmy', 'wikimedia', 'civil_comments', 'google_trends'].includes(String(s.source)) ||
-      s.family !== (s.source === 'google_trends' ? 'search_interest' : 'discussion') ||
+  const csv = s.source === 'google_trends_csv';
+  if (!['fictional', 'bluesky', 'lemmy', 'wikimedia', 'civil_comments', 'google_trends', 'google_trends_csv'].includes(String(s.source)) ||
+      s.family !== (s.source === 'google_trends' || csv ? 'search_interest' : 'discussion') ||
       s.mode !== 'topic' && s.mode !== 'event' || !text(s.query, 120) || s.query.length < 2 ||
-      s.date_unit !== (s.family === 'discussion' ? 'day' : 'month') || !period(s.start_date, s.date_unit) ||
-      !period(s.end_date, s.date_unit) || s.start_date > s.end_date || !['UNKNOWN', 'TR', 'US', 'GB'].includes(String(s.geography)) ||
-      s.requested_geography !== null && !['TR', 'US', 'GB'].includes(String(s.requested_geography)) ||
+      s.date_unit !== (s.source === 'google_trends' ? 'month' : 'day') || !period(s.start_date, s.date_unit) ||
+      !period(s.end_date, s.date_unit) || s.start_date > s.end_date || !['UNKNOWN', 'TR', 'US', 'GB', ...(csv ? ['worldwide'] : [])].includes(String(s.geography)) ||
+      s.requested_geography !== null && !['TR', 'US', 'GB', ...(csv ? ['worldwide'] : [])].includes(String(s.requested_geography)) ||
       s.language_filter !== null && s.language_filter !== 'en' && s.language_filter !== 'tr' ||
       s.content !== null && !['posts', 'comments', 'mixed'].includes(String(s.content)) || !count(s.analyzed_documents, 100) ||
       s.family === 'discussion' && s.geography !== 'UNKNOWN' || s.source === 'fictional' && !value.fictional) return null;
   const sources = ['https://trends.googleapis.com', 'https://en.wikipedia.org/wiki/Talk:USB_flash_drive',
     'https://huggingface.co/datasets/google/jigsaw_unintended_bias'];
-  if (value.source_reference !== null && !sources.includes(String(value.source_reference))) return null;
+  if (csv) {
+    try {
+      if (typeof value.source_reference !== 'string') return null;
+      const url = new URL(value.source_reference);
+      const params = url.searchParams;
+      if (url.origin !== 'https://trends.google.com' || url.pathname !== '/trends/explore' || url.username || url.password || url.hash ||
+          [...params.keys()].some(key => !['date', 'geo', 'q', 'hl', 'cat', 'gprop'].includes(key) || params.getAll(key).length !== 1) ||
+          (params.get('q') ?? '').split(',').some(term => term !== s.query) ||
+          (params.get('date') ?? '').split(',').some(range => range !== `${s.start_date} ${s.end_date}`) ||
+          !(params.get('geo') ?? '').split(',').map(code => code || 'worldwide').includes(String(s.geography)) ||
+          s.requested_geography !== s.geography || value.fictional) return null;
+    } catch {return null;}
+  } else if (value.source_reference !== null && !sources.includes(String(value.source_reference))) return null;
   const facts: EvidenceFact[] = [];
   for (const item of value.facts) {
     if (!object(item) || !text(item.id, 3) || !/^E[0-9]{2}$/.test(item.id) || facts.some(fact => fact.id === item.id) ||
         !text(item.metric, 40) || !Object.hasOwn(fields, item.metric) || !kind(item.kind) ||
-        !['documents', 'days', 'score', 'periods', 'metadata'].includes(String(item.unit)) ||
+        !['documents', 'days', 'score', 'periods', 'metadata', 'interest_index'].includes(String(item.unit)) ||
         !text(item.method, 100) || !/^[a-z0-9_]+$/.test(item.method) || !object(item.values) ||
-        item.denominator !== null && !count(item.denominator, 100)) return null;
+        item.denominator !== null && !count(item.denominator, item.unit === 'periods' ? 2000 : 100)) return null;
     const values: EvidenceFact['values'] = {};
     for (const [key, entry] of Object.entries(item.values)) {
       if (!fields[item.metric].includes(key) || entry !== null &&
@@ -100,7 +121,7 @@ export function projectAIInterpretation(value: unknown, evidence: EvidencePackag
       Object.entries(evidence.scope).some(([key, entry]) => (result.scope as Record<string, unknown>)[key] !== entry) ||
       !object(result.overview) || !text(result.overview.text, 200) || result.overview.text.length < 10 ||
       typeof result.overview.evidence_id !== 'string' || !evidence.facts.some(fact => fact.id === (result.overview as Record<string, unknown>).evidence_id) ||
-      !Array.isArray(result.findings) || result.findings.length < 1 || result.findings.length > 2) return null;
+      !Array.isArray(result.findings) || result.findings.length < 1 || result.findings.length > 3) return null;
   const findings: AIInterpretation['result']['findings'] = [];
   for (const item of result.findings) {
     if (!object(item) || !text(item.interpretation, 240) || item.interpretation.length < 10 ||

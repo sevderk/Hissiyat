@@ -6,8 +6,9 @@ import {TrendPlot} from '@/components/trend-plot';
 import {compareInterest, summarizeInterest, type TrendsExport} from '@/lib/trends-csv';
 import type {TrendPoint} from '@/lib/trends-research';
 import styles from './topic-research.module.css';
+import {ResearchInterpretationAI} from './research-interpretation';
 
-export function TrendsCsvResults({data, sha256}: {data: TrendsExport; sha256: string}) {
+export function TrendsCsvResults({data, sha256, file, mode}: {data: TrendsExport; sha256: string; file: File; mode: 'topic' | 'event'}) {
   const t = useTranslations('TopicResearch.importedTrends');
   const format = useFormatter();
   const locale = useLocale();
@@ -104,6 +105,8 @@ export function TrendsCsvResults({data, sha256}: {data: TrendsExport; sha256: st
           <p><a href={data.url} target="_blank" rel="noopener noreferrer">{t('original')}</a></p>
         </details>
       </section>
+      {data.series.map(line => <ResearchInterpretationAI key={`${sha256}-${line.region}-${locale}`} id={`csv-ai-${line.region}`}
+        input={{source: 'csv', file, url: data.url, region: line.region, mode}} />)}
     </section>
   );
 }

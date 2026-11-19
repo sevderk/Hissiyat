@@ -13,6 +13,7 @@
   },
   "TopicResearch": {
     "ai": {
+      "worldwide": "Dünya geneli",
       "title": "AI Araştırma Yorumu",
       "intro": "Bu araştırmanın doğrulanmış toplu kanıtlarından yerel modelle yorum oluşturun.",
       "fictional": "Kurgusal araştırma örneği · Gerçek katılımcı metni içermez",
@@ -22,7 +23,7 @@
       "generate": "Yerel AI yorumunu oluştur",
       "loading": "Yerel model üretiyor…",
       "waiting": "CPU modeli bir süre çalışabilir. Aşağıdaki doğrulanmış kanıtları okumaya devam edebilirsiniz.",
-      "needsEvidence": "Yerel AI özelliği etkin durumdayken bir konu veya olay araştırması tamamlayın. Yalnızca tarayıcıda içe aktarılan CSV dosyaları kendi analiz görünümünü kullanıyor.",
+      "needsEvidence": "Desteklenen bir konu/olay araştırmasını tamamlayın, Explore CSV içe aktarın veya aşağıdaki tarihsel karşılaştırmayı kullanın.",
       "generatedBy": "Yerel dil modeli tarafından oluşturuldu",
       "insufficient": "Tematik yorum için kanıt yetersiz.",
       "exploratory": "Bu örnekleme ilişkin keşifsel yorum",
@@ -66,7 +67,17 @@
         "search_limits": "Arama ilgisi mutlak sayı, duygu, görüş veya nedensellik ölçümü sunmaz. Sıfırlar düşük hacim veya mahremiyet baskılamasını yansıtabilir.",
         "geography": "Doğrulanan coğrafi atıf {geography}.",
         "context": "Demografik bilgiler ve makale bağlamı mevcut değil.",
-        "generalization": "Bu seçilmiş örneklem nüfus genellemesi veya nedensel çıkarımı desteklemez."
+        "generalization": "Bu seçilmiş örneklem nüfus genellemesi veya nedensel çıkarımı desteklemez.",
+        "csv_coverage": "{first}–{last} kapsamında {count} adet {interval} dönem. Gözlenen {observed}, eksik {missing}, bastırılmış {suppressed}, belirsiz sıfır {zero}.",
+        "csv_extremes": "Tepe endeksi {peak}, tarih {peakDate} ({peaks} eşit dönem); dip {trough}, tarih {troughDate} ({troughs} eşit dönem).",
+        "csv_change": "İlk gözlenen endeks {first}, tarih {firstDate}; son {last}, tarih {lastDate}. Fark {change} endeks puanıdır, yüzde değildir.",
+        "csv_origin": "Kullanıcı kaynak atfı ve yerelde hesaplanan dosya özeti. Özet bu baytları tanımlar; Google kökenini kanıtlamaz.",
+        "csv_limits": "Explore endeksleri isteğe göreli 0–100 ölçeğindedir. Sıfır, düşük hacim veya baskılamayı yansıtabilir. Eksik ve <1 değerleri ayrı kalır. Bu ölçek Research API ölçeği değildir; arama sayısı, duygu veya neden göstermez.",
+        "historical_coverage": "Eski politikada analiz {legacy}; güncel politikada {updated}. Ortak seçilen {shared}, yalnız eski {oldOnly}, yalnız güncel {newOnly} belge. Güncel uzun belge {long}. Örneklemler farklıdır; bu zamansal büyüme değildir.",
+        "historical_expressions": "Kural eşleşen belgeler: eski {legacy}/{oldTotal}, güncel {updated}/{newTotal}. Ortak {paired} belgede eski {oldPaired}, güncel {newPaired}. Bunlar sözcük eşleşmeleridir; doğrulanmış duygu yaygınlığı veya doğruluk artışı değildir.",
+        "historical_clusters": "Eski ARI {legacy}; güncel ARI {updated}. Güncel NMF silueti {nmf}; MiniLM silueti {minilm}. Bağımsız tematik geçerlilik kurulmadı.",
+        "historical_origin": "Sabitlenmiş toplu rapor; daha önce taranan arşiv satırı {examined}, erişim {retrieved}. Tam ifade filtresi: {query}. CC0 1.0. Kaynak yorumları yeniden oluşturulmaz.",
+        "historical_limits": "Tarihsel, sorgu ve güvenlik filtreli, makale kotasına tabi örneklemler. Politikalar farklı belgeler içerir; eşleştirilmemiş farklar kural doğruluğunu veya kamuoyu değişimini göstermez. Alıntı, yazar demografisi, makale bağlamı ve güncel coğrafya mevcut değildir."
       },
       "errors": {
         "model_unavailable": "Yerel modele ulaşılamıyor. Çalışma zamanını ve backend yapılandırmasını kontrol edin.",
@@ -75,8 +86,14 @@
         "invalid_model_output": "Model çıktısı biçim veya dil denetiminden geçmedi. Yorum gösterilmedi.",
         "evidence_expired": "Bu kanıt paketi mevcut backend oturumunda artık kullanılamıyor.",
         "busy": "Başka bir yerel analiz çalışıyor. Tamamlanmasını bekleyin.",
-        "invalid_input": "Yorum isteği geçersiz."
-      }
+        "invalid_input": "Yorum isteği geçersiz.",
+        "invalid_evidence": "Kanıt doğrulanamadı. Yerel backend ve kaynak kapsamını kontrol edin. CSV AI; Türkiye, ABD, Birleşik Krallık ve dünya genelini destekler."
+      },
+      "csvInput": "Kullanıcı tarafından sağlanan Explore CSV. Yerel doğrulama yapı ve kapsamı denetler; Google kökenini bağımsız olarak doğrulamaz. Her bölge için ayrı rapor hazırlanır.",
+      "historicalInput": "2015–2017 tarihsel Civil Comments/Jigsaw toplu sonuçları. Seçilmiş İngilizce yorumlar güncel kamuoyunu ölçmez; coğrafi atıf bilinmiyor.",
+      "availabilityUnknown": "Yerel modelin kullanılabilirliği üretim isteğinde kontrol edilir. Önce onaylı yerel çalışma zamanını başlatın.",
+      "checking": "Kanıt hazırlanıyor ve yerel model kontrol ediliyor…",
+      "available": "Son üretim yerel modelle başarıyla tamamlandı."
     },
     "policyComparison": {
       "query": "Şu tam ifadelerden en az biriyle eşleşme aranır {query}",

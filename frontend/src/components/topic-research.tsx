@@ -44,7 +44,7 @@ export function TopicResearch({enabled}: {enabled: boolean}) {
   const [trendsFile, setTrendsFile] = useState<File | null>(null);
   const [sameChart, setSameChart] = useState(false);
   const [trendsError, setTrendsError] = useState<TrendsCsvError['code'] | null>(null);
-  const [trendsResult, setTrendsResult] = useState<{data: TrendsExport; sha256: string} | null>(null);
+  const [trendsResult, setTrendsResult] = useState<{data: TrendsExport; sha256: string; file: File; mode: 'topic' | 'event'} | null>(null);
   const [officialResult, setOfficialResult] = useState<OfficialTrendsResult | null>(null);
   const importingTrends = scope.source === 'google_trends_csv';
   const queryingTrends = scope.source === 'google_trends';
@@ -120,7 +120,7 @@ export function TopicResearch({enabled}: {enabled: boolean}) {
       const data = importTrendsCsv(decodeTrendsCsv(buffer), input);
       const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', buffer));
       const sha256 = Array.from(digest, value => value.toString(16).padStart(2, '0')).join('');
-      setTrendsResult({data, sha256});
+      setTrendsResult({data, sha256, file: trendsFile, mode: scope.mode});
     } catch (failure) {
       setTrendsError(failure instanceof TrendsCsvError ? failure.code : 'parser');
     }
@@ -315,7 +315,7 @@ export function TopicResearch({enabled}: {enabled: boolean}) {
       {officialResult && <TrendsOfficialResult data={officialResult} />}
       {trendsResult && <TrendsCsvResults key={trendsResult.sha256} {...trendsResult} />}
       {result && <ResearchResults result={result} />}
-      {enabled && <ResearchInterpretationAI key={`${locale}-${(isTrends ? officialResult : result)?.evidence_package?.package_id ?? 'empty'}`}
+      {enabled && !importingTrends && <ResearchInterpretationAI key={`${locale}-${(isTrends ? officialResult : result)?.evidence_package?.package_id ?? 'empty'}`}
         evidence={importingTrends ? undefined : (queryingTrends ? officialResult : result)?.evidence_package} />}
       {enabled && <CivilComparison />}
     </section>

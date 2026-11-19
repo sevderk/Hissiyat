@@ -19,11 +19,12 @@ completed package without source retrieval.
 An in-flight generation retains its original package until completion; its
 response stays bound to that ID even if another research run replaces the cache.
 
-The current pathway covers completed server-side topic/event research and
-documented official API summaries. Unverified API measurement/display semantics
-produce insufficient evidence. Browser-only Explore CSV imports retain their
-existing view and need server-side provenance integration for this pathway.
-The curated Phase 9C comparison retains its existing aggregate view.
+The pathway covers completed server-side topic/event research, documented
+official API summaries, user-selected Explore CSV imports and the pinned
+Phase 9C historical aggregate comparison. Unverified API measurement/display
+semantics produce insufficient evidence. See the
+[real-report workflow](real-research-reports.md) for the CSV validation boundary,
+historical provenance, separate report actions and executed Phase 10B acceptance.
 
 ## Approved local model
 

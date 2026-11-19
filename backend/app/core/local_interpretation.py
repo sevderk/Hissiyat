@@ -73,7 +73,7 @@ class ModelInterpretation(BaseModel):
     scope: EvidenceScope
     status: Literal["exploratory", "insufficient"]
     overview: EvidenceNote
-    findings: list[Finding] = Field(min_length=1, max_length=2)
+    findings: list[Finding] = Field(min_length=1, max_length=3)
     uncertainties: list[EvidenceNote] = Field(min_length=1, max_length=1)
     questions: list[EvidenceNote] = Field(min_length=1, max_length=1)
 
@@ -84,7 +84,7 @@ Prose = Annotated[str, Field(min_length=10, max_length=140)]
 class InterpretationDraft(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True, hide_input_in_errors=True)
     overview: Prose
-    findings: list[Prose] = Field(min_length=1, max_length=2)
+    findings: list[Prose] = Field(min_length=1, max_length=3)
     uncertainty: Prose
     question: Prose
 
@@ -118,12 +118,19 @@ def check_numbers(text, fact):
         raise InterpretationError("unsupported_claim")
     if fact.metric in ("sample", "coverage") and re.search(r"\d+\s+(?:sources?|kaynak|samples?|örneklem)", text, re.IGNORECASE):
         raise InterpretationError("unsupported_claim")
-    if fact.metric == "expression":
+    if fact.unit in ("interest_index", "periods") and re.search(r"\d+\s+(?:searches|people|users|arama|kişi|kullanıcı)", text, re.IGNORECASE):
+        raise InterpretationError("unsupported_claim")
+    if fact.metric in ("expression", "historical_expressions"):
         fractions = [(int(n), int(d)) for n, d in re.findall(r"\b([0-9]+)\s+(?:out\s+)?of\s+([0-9]+)\b", text, re.IGNORECASE)]
         fractions += [(int(n), int(d)) for n, d in re.findall(r"\b([0-9]+)\s*/\s*([0-9]+)\b", text)]
         fractions += [(int(n), int(d)) for d, n in re.findall(
             r"\b([0-9]+)\s+(?:belgenin|belgeden|belgede|dokümanın|dokümandan|dokümanda|yorumun|yorumdan|yorumda|kayıttan)\s+([0-9]+)\b", text, re.IGNORECASE)]
-        if any(n != fact.values["matched"] or d != fact.denominator for n, d in fractions):
+        pairs = ({(fact.values["matched"], fact.denominator)} if fact.metric == "expression" else {
+            (fact.values["legacy"], fact.values["legacy_denominator"]),
+            (fact.values["updated"], fact.values["updated_denominator"]),
+            (fact.values["paired_legacy"], fact.values["paired_documents"]),
+            (fact.values["paired_updated"], fact.values["paired_documents"])})
+        if any((n, d) not in pairs for n, d in fractions):
             raise InterpretationError("unsupported_claim")
     allowed = {float(value) for value in fact.values.values() if type(value) in (int, float)}
     if fact.denominator is not None:
@@ -163,7 +170,7 @@ def validate_interpretation(payload, package: EvidencePackage, language: str):
         if fact is None or fact.kind != finding.kind or package.status == "insufficient" and finding.kind == "exploratory":
             raise InterpretationError("unsupported_claim")
         check_numbers(finding.interpretation, fact)
-        if fact.metric in ("topic_partition", "agreement") and (
+        if fact.metric in ("topic_partition", "agreement", "historical_clusters") and (
             not QUALIFIER.search(finding.interpretation) or CONFIDENT_TOPICS.search(finding.interpretation)
         ):
             raise InterpretationError("unsupported_claim")
@@ -172,12 +179,18 @@ def validate_interpretation(payload, package: EvidencePackage, language: str):
         if note.evidence_id not in facts or facts[note.evidence_id].kind != "insufficient":
             raise InterpretationError("unsupported_claim")
         check_numbers(note.text, facts[note.evidence_id])
+        if facts[note.evidence_id].metric == "topic_validity" and re.search(r"\bdue to\b|\bbecause\b|nedeniyle|sebebiyle", note.text, re.IGNORECASE):
+            raise InterpretationError("unsupported_claim")
         prose.append(note.text)
     if not result.questions[0].text.endswith("?"):
         raise InterpretationError("invalid_model_output")
     if len({finding.evidence_id for finding in result.findings}) != len(result.findings):
         raise InterpretationError("unsupported_claim")
     if any(UNSUPPORTED.search(text) or WRITTEN_NUMBER.search(text) for text in prose):
+        raise InterpretationError("unsupported_claim")
+    if any(fact.metric == "historical_origin" for fact in package.facts) and any(
+        re.search(r"\bwidespread\b|\bprevalence\b|\bmost people\b|\byaygın\b", text, re.IGNORECASE) for text in prose
+    ):
         raise InterpretationError("unsupported_claim")
     if any(LOCATION_CLAIM.search(text) or CONFIDENT_TOPICS.search(text) and TOPIC_WORDS.search(text) for text in prose):
         raise InterpretationError("unsupported_claim")
@@ -215,14 +228,28 @@ def generate_interpretation(package: EvidencePackage, language: str, port: int):
         topic = next((fact for fact in package.facts if fact.metric == "topic_partition"), None)
         if topic:
             finding_facts.append(topic)
+    historical = any(fact.metric == "historical_origin" for fact in package.facts)
+    csv = package.scope.source == "google_trends_csv"
+    if historical:
+        overview = next(fact for fact in package.facts if fact.metric == "historical_coverage")
+        finding_facts = [fact for fact in package.facts if fact.metric in ("historical_coverage", "historical_expressions", "historical_clusters")]
+    elif csv and package.status == "exploratory":
+        finding_facts = [fact for fact in package.facts if fact.metric in ("csv_extremes", "csv_change")]
     finding_facts = finding_facts or [overview]
-    gap_metric = ("context" if package.scope.family == "discussion" else
+    gap_metric = ("topic_validity" if historical else "csv_limits" if csv else "context" if package.scope.family == "discussion" else
                   "search_unverified" if any(fact.metric == "search_unverified" for fact in package.facts) else "search_limits")
     gap = next(fact for fact in package.facts if fact.metric == gap_metric)
 
     def fact_input(fact):
         values = dict(fact.values)
-        if fact.metric == "expression":
+        if historical and fact.metric == "sample":
+            values = {"analyzed_documents": fact.values["analyzed"], "policy": "updated"}
+        elif fact.metric == "historical_expressions":
+            values = {"analyzed_documents": fact.values["updated_denominator"], "matched_documents": fact.values["updated"],
+                      "measurement": "documents_with_wording_rule_matches", "comparison": "policy_samples_differ"}
+        elif fact.metric == "historical_clusters":
+            values = {"updated_ari": fact.values["updated_ari"], "thematic_validity": "unverified"}
+        elif fact.metric == "expression":
             values = {"analyzed_documents": fact.denominator, "matched_documents": fact.values["matched"],
                       "expression": EXPRESSION_LABELS[fact.values["label"]][0 if language == "tr" else 1]}
         elif fact.metric == "topic_partition":
@@ -241,12 +268,21 @@ def generate_interpretation(package: EvidencePackage, language: str, port: int):
     prefix = ("^Keşifsel: " if language == "tr" else "^Exploratory: ") if package.status == "exploratory" else "^"
     schema["properties"]["findings"].update(minItems=len(finding_facts), maxItems=len(finding_facts),
         items={"type": "string", "pattern": prefix + characters + "{10,115}[.!]$"})
+    if historical:
+        schema["properties"]["findings"] = {"type": "object", "additionalProperties": False,
+            "required": [fact.metric for fact in finding_facts], "properties": {
+                fact.metric: {"type": "string", "pattern": prefix + characters + "{10,115}[.!]$"} for fact in finding_facts}}
     evidence = {"status": package.status, "overview": fact_input(overview),
                 "findings": [fact_input(fact) for fact in finding_facts],
                 "missing_metadata": ("demografik bilgiler" if language == "tr" else "demographics")
                     if package.scope.family == "discussion" else gap.method}
+    if historical:
+        evidence["overview"] = {"legacy_documents": overview.values["legacy"], "updated_documents": overview.values["updated"],
+                                "study": "historical_policy_comparison"}
+        evidence["findings"] = {fact.metric: fact_input(fact) for fact in finding_facts}
+        evidence["missing_metadata"] = "tematik geçerlilik doğrulanmadı" if language == "tr" else "thematic validity is unverified"
     messages = [{"role": "system", "content": GENERATION_PROMPTS[language]}]
-    if language == "tr" and package.scope.family == "discussion":
+    if language == "tr" and package.scope.family == "discussion" and not historical:
         # A different fictional sample illustrates prose style, not an answer
         # template. Its counts cannot pass validation for the current sample.
         messages.extend([
@@ -260,7 +296,45 @@ def generate_interpretation(package: EvidencePackage, language: str, port: int):
                 "uncertainty": "Örneklemin demografik özellikleri bilinmiyor.",
                 "question": "Yorumun kapsamını değerlendirmek için hangi demografik bilgilere ihtiyaç var?"}, ensure_ascii=False)},
         ])
+    if language == "tr" and csv:
+        messages.extend([
+            {"role": "user", "content": json.dumps({"fictional_style_example": {"periods": 12, "peak": 10,
+                "trough": 2, "first": 4, "last": 6, "change": 2}}, ensure_ascii=False)},
+            {"role": "assistant", "content": json.dumps({"overview": "Bu örnek 12 gözlem dönemini kapsıyor.",
+                "findings": ["Keşifsel: Tepe endeksi 10, dip endeksi 2 olarak gözlendi.",
+                             "Keşifsel: İlk ve son gözlem arasındaki fark 2 endeks puanıdır."],
+                "uncertainty": "Bu göreli ölçek yalnızca aynı istekteki gözlemler için geçerlidir.",
+                "question": "Bu örüntünün başka bir dönemde tekrarlanıp tekrarlanmadığı hangi kanıtla incelenebilir?"}, ensure_ascii=False)},
+        ])
+    if historical:
+        messages.extend([
+            {"role": "user", "content": json.dumps({"fictional_style_example": {
+                "legacy_documents": 20, "updated_documents": 30, "shared": 10, "updated_matches": 1, "updated_ari": -0.01}})},
+            {"role": "assistant", "content": json.dumps({
+                "overview": "Tarihsel politika örneklemleri eski politikada 20, yeni politikada 30 belge içeriyor." if language == "tr" else "The historical policy samples contain 20 legacy and 30 updated documents.",
+                "findings": {"historical_coverage": "Keşifsel: Yalnızca 10 seçilmiş belge ortaktır; politika örneklemleri farklıdır." if language == "tr" else "Exploratory: Only 10 selected documents are shared, so these policy samples differ.",
+                    "historical_expressions": "Keşifsel: Yeni politikada 30 belgenin 1 tanesinde kural eşleşti; bu doğruluk kanıtı değildir." if language == "tr" else "Exploratory: Wording rules matched 1 of 30 updated documents; this does not establish accuracy.",
+                    "historical_clusters": "Keşifsel: Yeni ARI -0.01; tematik geçerlilik doğrulanmadı." if language == "tr" else "Exploratory: Updated ARI is -0.01; thematic validity remains unverified."},
+                "uncertainty": "Tematik geçerlilik bağımsız olarak değerlendirilmedi." if language == "tr" else "Thematic validity has no independent assessment.",
+                "question": "Tematik geçerliliği değerlendirmek için hangi bağımsız kanıt gerekir?" if language == "tr" else "What independent evidence could evaluate thematic validity?"}, ensure_ascii=False)},
+        ])
     instruction = GENERATION_PROMPTS[language]
+    if historical:
+        instruction += ("\nBu tarihsel bir politika karşılaştırmasıdır, güncel kamuoyu değildir. Legacy ve updated farklı örneklemlerdir. "
+                        "Kapsam değişimini, az sayıdaki ifade eşleşmesini ve keşifsel kümeleri ayrı bulgularda açıkla. "
+                        "Belirsizlikte tematik geçerliliğin doğrulanmadığını açıkça belirt. Yaygın duygu, doğruluk artışı veya neden iddia etme."
+                        if language == "tr" else "\nThese are historical policy samples, not current public opinion. Legacy and updated samples differ. "
+                        "Explain coverage, sparse wording matches and exploratory clustering separately. "
+                        "For wording matches give only updated matched/analyzed counts, without unpaired accuracy comparisons. "
+                        "For clustering give the exact updated ARI and unverified thematic validity. Do not list multiple scores. "
+                        "State that thematic validity is unverified, without inventing a reason. Claim no widespread emotions, improved accuracy or causation.")
+    if csv:
+        instruction += ("\nBunlar kullanıcı CSV'sindeki göreli 0-100 endekslerdir; arama sayısı veya yüzde değildir. "
+                        "İlk bulgu tepe ve dip endeksi, ikinci bulgu ilk-son gözlem arasındaki endeks puanı farkını açıklasın. "
+                        "Belirsizlikte ölçeğin yalnızca bu isteğe göreli olduğunu belirt."
+                        if language == "tr" else "\nThese are user-supplied request-relative 0-100 indices, not search counts or percentages. "
+                        "Explain the peak/trough indices first and the endpoint change in index points second. "
+                        "State that the scale is relative only to this request.")
     if package.scope.family == "search_interest":
         instruction = instruction.replace("Overview describes the document sample.", "Overview describes verified search-interest periods.")
         instruction = instruction.replace("Özet belge örneklemini açıklasın.", "Özet doğrulanmış arama ilgisi dönemlerini açıklasın.")
@@ -276,7 +350,7 @@ def generate_interpretation(package: EvidencePackage, language: str, port: int):
     messages[0]["content"] = instruction
     messages.extend([
         {"role": "user", "content": json.dumps({"evidence": evidence,
-            "output_shape": {"overview": "", "findings": [""] * len(finding_facts),
+            "output_shape": {"overview": "", "findings": {fact.metric: "" for fact in finding_facts} if historical else [""] * len(finding_facts),
                              "uncertainty": "", "question": ""}}, ensure_ascii=False)},
         # Built-in ChatML does not apply Jinja enable_thinking.
         {"role": "assistant", "content": "<think>\n\n</think>\n\n"},
@@ -310,6 +384,10 @@ def generate_interpretation(package: EvidencePackage, language: str, port: int):
         if not isinstance(content, str) or choice["message"].get("tool_calls"):
             raise InterpretationError("invalid_model_output")
         parsed = json.loads(content)
+        if historical:
+            if not isinstance(parsed, dict) or not isinstance(parsed.get("findings"), dict) or set(parsed["findings"]) != {fact.metric for fact in finding_facts}:
+                raise InterpretationError("invalid_model_output")
+            parsed["findings"] = [parsed["findings"][fact.metric] for fact in finding_facts]
         draft = InterpretationDraft.model_validate(parsed)
         if len(draft.findings) != len(finding_facts):
             raise InterpretationError("invalid_model_output")

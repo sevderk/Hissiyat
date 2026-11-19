@@ -4,6 +4,7 @@ import {comparisonPolicies, comparisonQuestions, projectCivilComparison, type Po
 import {evidenceLabels} from '@/lib/expression-evidence';
 import type {LocalAnalysisResult} from '@/lib/local-analysis-contract';
 import styles from './topic-research.module.css';
+import {ResearchInterpretationAI} from './research-interpretation';
 
 const comparison = projectCivilComparison(data);
 const coverage = ['matched', 'length', 'eligible', 'selected', 'analyzed', 'selected_long_documents',
@@ -87,6 +88,7 @@ export function CivilComparison() {
           <p className={styles.hint}>{t('qualityCaution')}</p>
           <p>{t('availability', {legacy: t(`statuses.${result.legacy.status}`), updated: t(`statuses.${newer.status}`)})}</p>
         </details>
+        <ResearchInterpretationAI key={`${locale}-${question}`} id={`historical-ai-${question}`} input={{source: 'historical', question}} />
       </details>;
     })}
     <p className={styles.hint}>{t('limitations')}</p>
