@@ -1,3 +1,5 @@
+import {projectEvidencePackage, type EvidencePackage} from './research-interpretation.ts';
+
 export const cadences = ['daily', 'weekly', 'monthly', 'yearly'] as const;
 export type TrendPoint = {date: string; status: 'observed' | 'missing' | 'suppressed'; value: number | null};
 export type TrendsPreview = {
@@ -15,6 +17,7 @@ type OfficialTrendsSummary = {
   peak_period: string | null; peak_ties: number; direction: 'increased' | 'decreased' | 'unchanged' | 'insufficient';
 };
 export type OfficialTrendsResult = {
+  evidence_package?: EvidencePackage;
   source: 'google_trends_research' | 'fictional_trends_research'; mode: 'topic' | 'event'; term: string;
   requested_geography: TrendsCountry; start_month: string; end_month: string; point_count: number;
   date_kind: 'string' | null; value_kind: 'integer' | 'decimal' | null; metadata_fields: MetadataName[];
@@ -47,6 +50,17 @@ function isSummary(value: unknown, scope: Pick<OfficialTrendsResult, 'requested_
 }
 
 export function projectOfficialTrends(value: unknown): OfficialTrendsResult | null {
+  let evidence: EvidencePackage | undefined;
+  if (typeof value === 'object' && value !== null && 'evidence_package' in value) {
+    const {evidence_package, ...rest} = value;
+    const checked = projectEvidencePackage(evidence_package);
+    const projected = projectOfficialTrends(rest);
+    if (!checked || !projected || checked.scope.source !== 'google_trends' || checked.scope.query !== projected.term ||
+        checked.scope.mode !== projected.mode || checked.scope.start_date !== projected.start_month ||
+        checked.scope.end_date !== projected.end_month || checked.scope.geography !== (projected.summary?.geography ?? 'UNKNOWN')) return null;
+    evidence = checked;
+    return {...projected, evidence_package: evidence};
+  }
   if (!hasFields(value, ['source', 'mode', 'term', 'requested_geography', 'start_month', 'end_month', 'point_count',
     'date_kind', 'value_kind', 'metadata_fields', 'measurement', 'summary'])) return null;
   const {source, mode, term, requested_geography, start_month, end_month, point_count,

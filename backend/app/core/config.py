@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     environment: Literal["development", "test", "production"] = "development"
     local_text_analysis: Literal["0", "1"] = "0"
     local_research: Literal["0", "1"] = "0"
+    local_interpretation: Literal["0", "1"] = "0"
+    local_interpretation_port: int = Field(default=8091, ge=1024, le=65535)
     bluesky_approved_request: SecretStr | None = Field(default=None, repr=False)
     lemmy_approved_request: SecretStr | None = Field(default=None, repr=False)
     wikimedia_approved_request: SecretStr | None = Field(default=None, repr=False)

@@ -12,6 +12,72 @@
     "skipToContent": "Ana içeriğe geç"
   },
   "TopicResearch": {
+    "ai": {
+      "title": "AI Araştırma Yorumu",
+      "intro": "Bu araştırmanın doğrulanmış toplu kanıtlarından yerel modelle yorum oluşturun.",
+      "fictional": "Kurgusal araştırma örneği · Gerçek katılımcı metni içermez",
+      "sourceGrounded": "Yorum, tamamlanan araştırmanın kanıt paketini kullanır.",
+      "scope": "“{query}” araştırması · {first}–{last} · Doğrulanan coğrafya {geography}",
+      "unknown": "Bilinmiyor",
+      "generate": "Yerel AI yorumunu oluştur",
+      "loading": "Yerel model üretiyor…",
+      "waiting": "CPU modeli bir süre çalışabilir. Aşağıdaki doğrulanmış kanıtları okumaya devam edebilirsiniz.",
+      "needsEvidence": "Yerel AI özelliği etkin durumdayken bir konu veya olay araştırması tamamlayın. Yalnızca tarayıcıda içe aktarılan CSV dosyaları kendi analiz görünümünü kullanıyor.",
+      "generatedBy": "Yerel dil modeli tarafından oluşturuldu",
+      "insufficient": "Tematik yorum için kanıt yetersiz.",
+      "exploratory": "Bu örnekleme ilişkin keşifsel yorum",
+      "overview": "Araştırma özeti",
+      "findings": "Kanıta bağlı bulgular",
+      "uncertainties": "Önemli belirsizlikler",
+      "questions": "Açık araştırma sorusu",
+      "evidence": "Doğrulanmış kanıtları ve yöntemleri incele",
+      "observations": "Bu gözlemler uygulamanın hesaplamalarından gelir. Dil modeli seçilen kanıtları açıklar; atıfları uygulama bağlar.",
+      "method": "Tespit veya ölçüm yöntemi",
+      "source": "Kaynak bağlantısı",
+      "terms": "Geçici, tekrarlanan terimler {terms}",
+      "verification": "Otomatik denetimler kapsamı, atıfları ve sayısal tutarlılığı kontrol eder ve bilinen desteksiz iddiaları reddeder. Anlam hataları ve gözden kaçan çıkarımlar olabilir.",
+      "kinds": {
+        "observed": "Ölçülen gözlem",
+        "exploratory": "Keşifsel yöntem çıktısı",
+        "insufficient": "Eksik veya yetersiz kanıt"
+      },
+      "directions": {
+        "increased": "artış",
+        "decreased": "azalış",
+        "unchanged": "değişmedi",
+        "insufficient": "kanıt yetersiz"
+      },
+      "facts": {
+        "sample": "Sorguyla eşleşen veya dönen kayıt {retrieved}. Seçilen belge {selected}. Analiz edilen belge {analyzed}.",
+        "source_scope": "Seçim üst sınırı {limit}. Taranan kaynak satırı {examined}. Örnekleme öncesi uygun kayıt {eligible}.",
+        "coverage": "Gözlenen yayın kapsamı {first}–{last}, toplam {days} etkin UTC tarihi.",
+        "temporal_comparison": "Zaman içinde karşılaştırılabilir örnekleme kurulmadı. Tarih kapsamı tek başına eğilim karşılaştırmasını desteklemez.",
+        "expression": "{denominator} analiz belgesinin {count} tanesinde {label} eşleşti.",
+        "no_expression_matches": "Desteklenen ifade kuralları {count} belgede eşleşmedi. Belgelerde yine de bu ifadeler bulunabilir.",
+        "expression_unavailable": "Sürümlenmiş ifade kanıtı mevcut değil.",
+        "topic_partition": "{method}, {count} belgeyi analiz etti. Grup boyutları {sizes}. Atanmayan belge {unassigned}. Atanan {assigned} belgede kosinüs silueti {silhouette}.",
+        "agreement": "Ortak {count} atamada yöntemler arası ARI {score}.",
+        "topic_validity": "Tematik geçerlilik bağımsız olarak değerlendirilmedi. Grup numaraları ve tekrarlanan terimler keşifseldir.",
+        "topics_unavailable": "İstenen gruplama için uygun veya farklı belge sayısı yetersiz.",
+        "expression_validity": "Kuralların kesinlik ve duyarlılığı için bağımsız doğruluk tahmini yok.",
+        "analysis_unavailable": "Bu sonuç için metin analizi istenmedi.",
+        "search_summary": "Doğrulanmış dönem kapsamı {first}–{last}. Sıfır dışı gözlem {nonzero}, belirsiz sıfır {zero}, eksik {missing}, bastırılmış {suppressed}. Uç gözlemler arasındaki yön {direction}.",
+        "search_unverified": "API yanıtının ölçüm veya gösterim anlamları doğrulanmadı. Yanıt yapısı arama ilgisi yorumunu desteklemiyor.",
+        "search_limits": "Arama ilgisi mutlak sayı, duygu, görüş veya nedensellik ölçümü sunmaz. Sıfırlar düşük hacim veya mahremiyet baskılamasını yansıtabilir.",
+        "geography": "Doğrulanan coğrafi atıf {geography}.",
+        "context": "Demografik bilgiler ve makale bağlamı mevcut değil.",
+        "generalization": "Bu seçilmiş örneklem nüfus genellemesi veya nedensel çıkarımı desteklemez."
+      },
+      "errors": {
+        "model_unavailable": "Yerel modele ulaşılamıyor. Çalışma zamanını ve backend yapılandırmasını kontrol edin.",
+        "model_timeout": "Yerel üretim zaman sınırını aştı. Doğrulanmış kanıtlar kullanılabilir durumda.",
+        "unsupported_claim": "Model desteksiz bir iddia üretti. Yorum gösterilmedi.",
+        "invalid_model_output": "Model çıktısı biçim veya dil denetiminden geçmedi. Yorum gösterilmedi.",
+        "evidence_expired": "Bu kanıt paketi mevcut backend oturumunda artık kullanılamıyor.",
+        "busy": "Başka bir yerel analiz çalışıyor. Tamamlanmasını bekleyin.",
+        "invalid_input": "Yorum isteği geçersiz."
+      }
+    },
     "policyComparison": {
       "query": "Şu tam ifadelerden en az biriyle eşleşme aranır {query}",
       "title": "Tarihsel metin karşılaştırması",

@@ -134,6 +134,10 @@ validation, output disclosure and concurrency with the optional CPU packages.
 
 ### Expressed emotion, need and experience signals
 
+The main workspace also supports the separately enabled
+[local evidence-grounded interpretation](local-research-interpretation.md)
+of its completed aggregate research outputs.
+
 This separate local text tool retains its aggregate-only expression contract.
 The main topic/event workspace uses the newer versioned evidence-span method
 and provides document-linked evidence and problems/reasons alongside these

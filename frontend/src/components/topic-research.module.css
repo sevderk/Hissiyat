@@ -103,6 +103,11 @@
 .trendsHash { overflow-wrap: anywhere; }
 .evidenceDetails { margin-top: .8rem; }
 .comparisonScroll { overflow-x: auto; max-width: 100%; }
+.aiPanel { margin-block: 1rem; border-inline-start: 4px solid #365d9a; }
+.aiPanel h3 { margin-top: 1rem; }
+.aiPanel a { color: #155648; text-decoration: underline; text-underline-offset: .15em; }
+.aiGenerate { margin-block: .8rem; padding: .7rem 1rem; border: 0; border-radius: .5rem; color: #fff; background: #244d72; font-weight: 700; cursor: pointer; }
+.aiGenerate:disabled { opacity: .65; cursor: wait; }
 .comparisonScroll table { min-width: 42rem; }
 .evidenceDetails summary, .explorer summary { cursor: pointer; color: var(--deep); font-weight: 600; }
 .evidenceQuote { margin-top: .5rem; border-inline-start: 3px solid #89aa99; padding-inline-start: .7rem; white-space: pre-wrap; }

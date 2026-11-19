@@ -6,6 +6,7 @@ import {TrendsCsvResults} from '@/components/trends-csv-results';
 import {TrendsOfficialResult} from '@/components/trends-official-result';
 import {DiscussionEvidence} from '@/components/discussion-evidence';
 import {CivilComparison} from '@/components/civil-comparison';
+import {ResearchInterpretationAI} from '@/components/research-interpretation';
 import {expressionCategories} from '@/lib/local-analysis-contract';
 import {decodeTrendsCsv, importTrendsCsv, maxTrendsCsvBytes, readExploreLink, TrendsCsvError, type TrendsExport} from '@/lib/trends-csv';
 import {projectOfficialTrends, trendsCountries, type OfficialTrendsResult, type TrendsCountry} from '@/lib/trends-research';
@@ -314,6 +315,8 @@ export function TopicResearch({enabled}: {enabled: boolean}) {
       {officialResult && <TrendsOfficialResult data={officialResult} />}
       {trendsResult && <TrendsCsvResults key={trendsResult.sha256} {...trendsResult} />}
       {result && <ResearchResults result={result} />}
+      {enabled && <ResearchInterpretationAI key={`${locale}-${(isTrends ? officialResult : result)?.evidence_package?.package_id ?? 'empty'}`}
+        evidence={importingTrends ? undefined : (queryingTrends ? officialResult : result)?.evidence_package} />}
       {enabled && <CivilComparison />}
     </section>
   );

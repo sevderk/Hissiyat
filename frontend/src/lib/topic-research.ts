@@ -2,6 +2,7 @@ import {analysisLimits, isExpressionSignals, isLocalAnalysisResult, type Express
   type LocalAnalysisResult} from './local-analysis-contract.ts';
 import type {TrendsCountry} from './trends-research.ts';
 import {projectExpressionEvidence, projectProcessing, type ExpressionEvidence, type Processing} from './expression-evidence.ts';
+import {projectEvidencePackage, type EvidencePackage} from './research-interpretation.ts';
 
 export const researchSources = ['google_trends', 'google_trends_csv', 'fictional', 'civil_comments', 'wikimedia', 'lemmy', 'bluesky'] as const;
 export const wikimediaTitle = 'Talk:USB flash drive';
@@ -44,6 +45,7 @@ type ResearchRecord = {
   | {source: 'civil_comments'; reference: null; article_id: string | null; publication_id: string | null});
 
 export type ResearchResult = {
+  evidence_package?: EvidencePackage;
   scope: ResearchScope;
   capabilities: {status: 'public_api' | 'synthetic' | 'historical'; languages: string[]; geography: false; max_items: 25 | 100};
   retrieved: number;
@@ -285,5 +287,13 @@ export function projectResearchResult(value: unknown): ResearchResult | null {
   } else if (value.discussion_analysis !== undefined) return null;
   if (content === undefined) delete result.scope.content;
   if (analyze_discussion === undefined) delete result.scope.analyze_discussion;
+  if (value.evidence_package !== undefined) {
+    const evidence = projectEvidencePackage(value.evidence_package);
+    if (!evidence || evidence.scope.source !== source || evidence.scope.mode !== mode || evidence.scope.query !== query ||
+        evidence.scope.start_date !== start_date || evidence.scope.end_date !== end_date ||
+        evidence.scope.analyzed_documents !== (result.discussion_analysis?.evidence_rows.length ?? 0) ||
+        evidence.facts.find(fact => fact.metric === 'sample')?.values.selected !== records.length) return null;
+    result.evidence_package = evidence;
+  }
   return result;
 }

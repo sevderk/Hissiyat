@@ -51,6 +51,11 @@ def create_app(settings: Settings | None = None, *, trends_preview: dict | None 
         configured = [(source, value) for source, value in approvals if value is not None]
         application.state.approved_research = get_approved_request(*configured[0]) if len(configured) == 1 else None
         application.include_router(local_research_router, prefix=router.prefix)
+        if configuration.local_interpretation == "1":
+            from app.api.v1.local_interpretation import router as local_interpretation_router
+
+            application.state.interpretation_evidence = None
+            application.include_router(local_interpretation_router, prefix=router.prefix)
     return application
 
 

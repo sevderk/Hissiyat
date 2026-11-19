@@ -83,6 +83,12 @@ async def local_research(request: Request):
             result = await run_in_threadpool(run_workspace_trends, scope, settings.google_trends_api_key, contract)
         else:
             result = await run_in_threadpool(run_research, scope, model_directory=settings.local_analysis_model_dir)
+        if settings.local_interpretation == "1":
+            from app.core.research_evidence import build_evidence
+
+            evidence = build_evidence(scope, result)
+            request.app.state.interpretation_evidence = evidence
+            result["evidence_package"] = evidence.model_dump()
         return reply(200, result)
     except ResearchError as exc:
         failure = {"code": exc.code}
